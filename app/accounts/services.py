@@ -7,12 +7,12 @@ from app.accounts.models import (
     UserModel,
 )
 from app.accounts.schemas import UserRegistrationSchema
+from app.accounts.security import hash_password
 
 
 async def register_user(
     db: AsyncSession,
     user_data: UserRegistrationSchema,
-    hashed_password: str,
 ) -> UserModel:
     result = await db.execute(
         select(UserModel).where(UserModel.email == user_data.email)
@@ -34,7 +34,7 @@ async def register_user(
 
     user = UserModel(
         email=user_data.email,
-        hashed_password=hashed_password,
+        hashed_password=hash_password(user_data.password),
         is_active=False,
         is_verified=False,
         group_id=user_group.id,

@@ -11,7 +11,6 @@ from sqlalchemy import (
     Index,
     String,
     Text,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -59,7 +58,7 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
     )
@@ -148,12 +147,12 @@ class UserProfileModel(Base):
     __tablename__ = "user_profiles"
 
     id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
     )
     user_id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         ForeignKey(
             "users.id",
             ondelete="CASCADE",
@@ -199,12 +198,12 @@ class ActivationTokenModel(Base):
     __tablename__ = "activation_tokens"
 
     id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
     )
     user_id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         ForeignKey(
             "users.id",
             ondelete="CASCADE",
@@ -243,12 +242,12 @@ class PasswordResetTokenModel(Base):
     __tablename__ = "password_reset_tokens"
 
     id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
     )
     user_id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         ForeignKey(
             "users.id",
             ondelete="CASCADE",
@@ -287,12 +286,12 @@ class RefreshTokenModel(Base):
     __tablename__ = "refresh_tokens"
 
     id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         primary_key=True,
         default=uuid4,
     )
     user_id: Mapped[UUID] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         ForeignKey(
             "users.id",
             ondelete="CASCADE",
@@ -318,7 +317,7 @@ class RefreshTokenModel(Base):
         nullable=True,
     )
     replaced_by_token_id: Mapped[UUID | None] = mapped_column(
-        Uuid,
+        PGUUID(as_uuid=True),
         ForeignKey(
             "refresh_tokens.id",
             ondelete="SET NULL",

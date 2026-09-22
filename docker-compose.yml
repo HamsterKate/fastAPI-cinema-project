@@ -24,8 +24,16 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - mailhog
     volumes:
       - .:/app
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: cinema_mailhog
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
 
 volumes:
   postgres_data:

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str
 
+    api_prefix: str = "/api/v2"
     activation_url: str
 
     model_config = SettingsConfigDict(

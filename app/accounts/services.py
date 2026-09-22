@@ -78,3 +78,41 @@ async def register_user(
 
     return user
 
+
+async def activate_user(
+    db: AsyncSession,
+    token: str,
+) -> UserModel:
+    token_hash = hash_token(token)
+
+    result = await db.execute(
+        select(ActivationTokenModel).where(
+            ActivationTokenModel.token_hash == token_hash
+        )
+    )
+    activation = result.scalar_one_or_none()
+
+    if activation is None:
+        raise ValueError("Invalid activation token.")
+
+    if activation.expires_at <= datetime.now(timezone.utc):
+        raise ValueError("Activation token has expired.")
+
+    result = await db.execute(
+        select(UserModel).where(
+            UserModel.id == activation.user_id
+        )
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise ValueError("User not found.")
+
+    user.is_active = True
+    user.is_verified = True
+
+    await db.delete(activation)
+    await db.commit()
+    await db.refresh(user)
+
+    return user

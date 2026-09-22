@@ -2,10 +2,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
+from app.accounts.validators import Password
+
 
 class UserRegistrationSchema(BaseModel):
     email: EmailStr
-    password: str
+    password: Password
 
 
 class UserLoginSchema(BaseModel):
@@ -23,7 +25,7 @@ class UserResponseSchema(BaseModel):
 
 class UserPasswordChangeSchema(BaseModel):
     old_password: str
-    new_password: str
+    new_password: Password
 
 
 class PasswordResetRequestSchema(BaseModel):
@@ -32,7 +34,7 @@ class PasswordResetRequestSchema(BaseModel):
 
 class PasswordResetConfirmSchema(BaseModel):
     token: str
-    new_password: str
+    new_password: Password
 
 
 class TokenRefreshSchema(BaseModel):
@@ -43,5 +45,3 @@ class TokenResponseSchema(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-
-

@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
-from app.models.base import Base
+from app.db.models.base import Base
 
 
 class UserGroupEnum(StrEnum):
@@ -43,6 +43,7 @@ class UserGroupModel(Base):
             UserGroupEnum,
             name="user_group_enum",
             native_enum=True,
+            values_callable=lambda enum: [item.value for item in enum],
         ),
         nullable=False,
         unique=True,
@@ -177,6 +178,7 @@ class UserProfileModel(Base):
             GenderEnum,
             name="gender_enum",
             native_enum=True,
+            values_callable=lambda enum: [item.value for item in enum],
         ),
         nullable=True,
     )

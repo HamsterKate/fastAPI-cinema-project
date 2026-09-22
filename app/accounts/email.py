@@ -39,7 +39,7 @@ async def send_activation_email(
         "Welcome to Cinema 2.0!\n\n"
         "Please activate your account using the link below:\n"
         f"{activation_link}\n\n"
-        "This link expires in 24 hours."
+        f"This link expires in {settings.activation_token_expire_minutes} minutes."
     )
 
     await send_email(

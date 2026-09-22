@@ -19,7 +19,9 @@ class Settings(BaseSettings):
     smtp_from: str
 
     api_prefix: str = "/api/v2"
+
     activation_url: str
+    activation_token_expire_minutes: int = 15
 
     model_config = SettingsConfigDict(
         env_file=".env",

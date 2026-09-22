@@ -14,6 +14,8 @@ from app.accounts.schemas import UserRegistrationSchema
 from app.accounts.security import hash_password
 from app.accounts.tokens import generate_token, hash_token
 
+from app.core.config import settings
+
 
 async def create_activation_token(
     db: AsyncSession,
@@ -24,7 +26,10 @@ async def create_activation_token(
     activation_token = ActivationTokenModel(
         user_id=user.id,
         token_hash=hash_token(token),
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        expires_at=(
+                datetime.now(timezone.utc)
+                + timedelta(minutes=settings.activation_token_expire_minutes)
+        ),
     )
 
     db.add(activation_token)
@@ -116,3 +121,36 @@ async def activate_user(
     await db.refresh(user)
 
     return user
+
+
+async def resend_activation(
+    db: AsyncSession,
+    email: str,
+) -> None:
+    result = await db.execute(
+        select(UserModel).where(UserModel.email == email)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None or user.is_active:
+        return
+
+    result = await db.execute(
+        select(ActivationTokenModel).where(
+            ActivationTokenModel.user_id == user.id
+        )
+    )
+    existing_token = result.scalar_one_or_none()
+
+    if existing_token:
+        await db.delete(existing_token)
+        await db.flush()
+
+    token = await create_activation_token(db, user)
+
+    await db.commit()
+
+    await send_activation_email(
+        recipient=user.email,
+        token=token,
+    )

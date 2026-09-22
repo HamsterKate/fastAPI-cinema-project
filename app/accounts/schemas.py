@@ -37,6 +37,10 @@ class PasswordResetConfirmSchema(BaseModel):
     new_password: Password
 
 
+class ResendActivationSchema(BaseModel):
+    email: NormalizedEmail
+
+
 class TokenRefreshSchema(BaseModel):
     refresh_token: str
 

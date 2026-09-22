@@ -4,22 +4,32 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.email import send_activation_email
+from app.accounts.jwt import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
 from app.accounts.models import (
     ActivationTokenModel,
+    RefreshTokenModel,
     UserGroupEnum,
     UserGroupModel,
     UserModel,
 )
-from app.accounts.schemas import UserRegistrationSchema
-from app.accounts.security import hash_password
+from app.accounts.schemas import (
+    TokenResponseSchema,
+    UserLoginSchema,
+    UserRegistrationSchema,
+)
+from app.accounts.security import hash_password, verify_password
 from app.accounts.tokens import generate_token, hash_token
 
 from app.core.config import settings
 
 
 async def create_activation_token(
-    db: AsyncSession,
-    user: UserModel,
+        db: AsyncSession,
+        user: UserModel,
 ) -> str:
     token = generate_token()
 
@@ -39,8 +49,8 @@ async def create_activation_token(
 
 
 async def register_user(
-    db: AsyncSession,
-    user_data: UserRegistrationSchema,
+        db: AsyncSession,
+        user_data: UserRegistrationSchema,
 ) -> UserModel:
     result = await db.execute(
         select(UserModel).where(UserModel.email == user_data.email)
@@ -85,8 +95,8 @@ async def register_user(
 
 
 async def activate_user(
-    db: AsyncSession,
-    token: str,
+        db: AsyncSession,
+        token: str,
 ) -> UserModel:
     token_hash = hash_token(token)
 
@@ -124,8 +134,8 @@ async def activate_user(
 
 
 async def resend_activation(
-    db: AsyncSession,
-    email: str,
+        db: AsyncSession,
+        email: str,
 ) -> None:
     result = await db.execute(
         select(UserModel).where(UserModel.email == email)
@@ -153,4 +163,48 @@ async def resend_activation(
     await send_activation_email(
         recipient=user.email,
         token=token,
+    )
+
+
+async def login_user(
+        db: AsyncSession,
+        user_data: UserLoginSchema,
+) -> TokenResponseSchema:
+    result = await db.execute(
+        select(UserModel).where(UserModel.email == user_data.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None or not verify_password(
+        user_data.password,
+        user.hashed_password,
+    ):
+        raise ValueError("Invalid email or password.")
+
+    if not user.is_active or not user.is_verified:
+        raise ValueError("Account is not activated.")
+
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+
+    refresh_payload = decode_token(
+        refresh_token,
+        expected_type="refresh",
+    )
+
+    refresh_token_record = RefreshTokenModel(
+        user_id=user.id,
+        token_hash=hash_token(refresh_token),
+        expires_at=datetime.fromtimestamp(
+            refresh_payload["exp"],
+            tz=timezone.utc,
+        ),
+    )
+
+    db.add(refresh_token_record)
+    await db.commit()
+
+    return TokenResponseSchema(
+        access_token=access_token,
+        refresh_token=refresh_token,
     )

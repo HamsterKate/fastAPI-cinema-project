@@ -3,12 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.services import (
     activate_user,
+    login_user,
     register_user,
     resend_activation,
 )
 from app.db.session import get_db
 from app.accounts.schemas import (
     ResendActivationSchema,
+    TokenResponseSchema,
+    UserLoginSchema,
     UserRegistrationSchema,
     UserResponseSchema,
 )
@@ -75,3 +78,31 @@ async def register(
         user,
         from_attributes=True,
     )
+
+
+@router.post(
+    "/login",
+    response_model=TokenResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Invalid email or password"},
+        403: {"description": "Account is not activated"},
+    },
+)
+async def login(
+    data: UserLoginSchema,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponseSchema:
+    try:
+        return await login_user(db, data)
+    except ValueError as exc:
+        if str(exc) == "Account is not activated.":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(exc),
+            ) from exc
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+        ) from exc

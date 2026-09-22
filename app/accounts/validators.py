@@ -1,7 +1,7 @@
 import re
-
-from pydantic import AfterValidator
 from typing import Annotated
+
+from pydantic import AfterValidator, EmailStr
 
 
 def validate_password(password: str) -> str:
@@ -30,3 +30,13 @@ def validate_password(password: str) -> str:
 
 
 Password = Annotated[str, AfterValidator(validate_password)]
+
+
+def normalize_email(email: EmailStr) -> str:
+    return str(email).lower()
+
+
+NormalizedEmail = Annotated[
+    EmailStr,
+    AfterValidator(normalize_email),
+]

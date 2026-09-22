@@ -2,16 +2,16 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
-from app.accounts.validators import Password
+from app.accounts.validators import NormalizedEmail, Password
 
 
 class UserRegistrationSchema(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: Password
 
 
 class UserLoginSchema(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str
 
 
@@ -29,7 +29,7 @@ class UserPasswordChangeSchema(BaseModel):
 
 
 class PasswordResetRequestSchema(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
 
 
 class PasswordResetConfirmSchema(BaseModel):

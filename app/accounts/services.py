@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -207,4 +208,106 @@ async def login_user(
     return TokenResponseSchema(
         access_token=access_token,
         refresh_token=refresh_token,
+    )
+
+
+async def revoke_token_chain(
+        db: AsyncSession,
+        token: RefreshTokenModel,
+) -> None:
+    revoked_at = datetime.now(timezone.utc)
+    current_token = token
+
+    while current_token is not None:
+        if current_token.revoked_at is None:
+            current_token.revoked_at = revoked_at
+
+        if current_token.replaced_by_token_id is None:
+            break
+
+        result = await db.execute(
+            select(RefreshTokenModel)
+            .where(
+                RefreshTokenModel.id
+                == current_token.replaced_by_token_id,
+                RefreshTokenModel.user_id == token.user_id,
+            )
+            .with_for_update()
+        )
+
+        current_token = result.scalar_one_or_none()
+
+async def refresh_user_tokens(
+    db: AsyncSession,
+    refresh_token: str,
+) -> TokenResponseSchema:
+    payload = decode_token(
+        refresh_token,
+        expected_type="refresh",
+    )
+
+    user_id = UUID(payload["sub"])
+
+    result = await db.execute(
+        select(RefreshTokenModel)
+        .where(
+            RefreshTokenModel.token_hash == hash_token(refresh_token),
+            RefreshTokenModel.user_id == user_id,
+        )
+        .with_for_update()
+    )
+    stored_token = result.scalar_one_or_none()
+
+    if stored_token is None:
+        raise ValueError("Invalid refresh token.")
+
+    # A revoked token used again indicates possible token theft.
+    if stored_token.revoked_at is not None:
+        if stored_token.replaced_by_token_id is not None:
+            await revoke_token_chain(db, stored_token)
+            await db.commit()
+
+        raise ValueError("Refresh token has been revoked.")
+
+    if stored_token.expires_at <= datetime.now(timezone.utc):
+        raise ValueError("Refresh token has expired.")
+
+    result = await db.execute(
+        select(UserModel).where(
+            UserModel.id == user_id,
+        )
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None or not user.is_active or not user.is_verified:
+        raise ValueError("Account is not active.")
+
+    new_access_token = create_access_token(user.id)
+    new_refresh_token = create_refresh_token(user.id)
+
+    new_payload = decode_token(
+        new_refresh_token,
+        expected_type="refresh",
+    )
+
+    new_token_record = RefreshTokenModel(
+        user_id=user.id,
+        token_hash=hash_token(new_refresh_token),
+        expires_at=datetime.fromtimestamp(
+            new_payload["exp"],
+            tz=timezone.utc,
+        ),
+    )
+
+    db.add(new_token_record)
+    await db.flush()
+
+    stored_token.revoked_at = datetime.now(timezone.utc)
+    stored_token.replaced_by_token_id = new_token_record.id
+
+    await db.commit()
+
+    return TokenResponseSchema(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
     )

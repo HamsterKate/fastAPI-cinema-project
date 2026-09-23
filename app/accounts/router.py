@@ -5,11 +5,13 @@ from app.accounts.services import (
     activate_user,
     login_user,
     register_user,
+    refresh_user_tokens,
     resend_activation,
 )
 from app.db.session import get_db
 from app.accounts.schemas import (
     ResendActivationSchema,
+    TokenRefreshSchema,
     TokenResponseSchema,
     UserLoginSchema,
     UserRegistrationSchema,
@@ -105,4 +107,28 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",
+        ) from exc
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Invalid, expired or revoked refresh token"},
+    },
+)
+async def refresh_tokens(
+    data: TokenRefreshSchema,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponseSchema:
+    try:
+        return await refresh_user_tokens(
+            db,
+            data.refresh_token,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
         ) from exc

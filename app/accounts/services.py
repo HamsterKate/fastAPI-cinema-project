@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.email import (
@@ -387,3 +387,49 @@ async def forgot_password(
         recipient=user.email,
         token=token,
     )
+
+
+async def reset_password(
+    db: AsyncSession,
+    token: str,
+    new_password: str,
+) -> None:
+    result = await db.execute(
+        select(PasswordResetTokenModel)
+        .where(
+            PasswordResetTokenModel.token_hash == hash_token(token)
+        )
+        .with_for_update()
+    )
+    reset_token = result.scalar_one_or_none()
+
+    if reset_token is None:
+        raise ValueError("Invalid or expired password reset token.")
+
+    if reset_token.expires_at <= datetime.now(timezone.utc):
+        raise ValueError("Invalid or expired password reset token.")
+
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == reset_token.user_id)
+        .with_for_update()
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None or not user.is_active or not user.is_verified:
+        raise ValueError("Invalid or expired password reset token.")
+
+    user.hashed_password = hash_password(new_password)
+
+    await db.execute(
+        update(RefreshTokenModel)
+        .where(
+            RefreshTokenModel.user_id == user.id,
+            RefreshTokenModel.revoked_at.is_(None),
+        )
+        .values(revoked_at=datetime.now(timezone.utc))
+    )
+
+    await db.delete(reset_token)
+
+    await db.commit()

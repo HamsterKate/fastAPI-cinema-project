@@ -9,7 +9,7 @@ from app.accounts.services import (
     logout_user,
     register_user,
     refresh_user_tokens,
-    resend_activation, forgot_password,
+    resend_activation, forgot_password, reset_password,
 )
 from app.db.session import get_db
 from app.accounts.schemas import (
@@ -18,7 +18,7 @@ from app.accounts.schemas import (
     TokenResponseSchema,
     UserLoginSchema,
     UserRegistrationSchema,
-    UserResponseSchema, ForgotPasswordSchema,
+    UserResponseSchema, ForgotPasswordSchema, PasswordResetConfirmSchema,
 )
 
 
@@ -190,3 +190,27 @@ async def forgot_password_endpoint(
             "a password reset link has been sent."
         )
     }
+
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+)
+async def reset_password_endpoint(
+    data: PasswordResetConfirmSchema,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    try:
+        await reset_password(
+            db=db,
+            token=data.token,
+            new_password=data.new_password,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return {"message": "Password has been reset successfully."}
+

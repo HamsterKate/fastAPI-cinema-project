@@ -1,12 +1,14 @@
 from uuid import UUID
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.accounts.jwt import decode_token
-from app.accounts.models import UserModel
+from app.accounts.models import UserModel, UserGroupEnum
 from app.db.session import get_db
 
 
@@ -38,7 +40,9 @@ async def get_current_user(
         raise authentication_error from exc
 
     result = await db.execute(
-        select(UserModel).where(UserModel.id == user_id)
+        select(UserModel)
+        .options(selectinload(UserModel.group))
+        .where(UserModel.id == user_id)
     )
     user = result.scalar_one_or_none()
 
@@ -52,3 +56,20 @@ async def get_current_user(
         )
 
     return user
+
+
+def require_roles(
+    *allowed_roles: UserGroupEnum,
+) -> Callable:
+    async def check_roles(
+        current_user: UserModel = Depends(get_current_user),
+    ) -> UserModel:
+        if current_user.group.name not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to access this resource.",
+            )
+
+        return current_user
+
+    return check_roles

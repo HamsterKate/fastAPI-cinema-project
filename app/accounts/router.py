@@ -9,7 +9,7 @@ from app.accounts.services import (
     logout_user,
     register_user,
     refresh_user_tokens,
-    resend_activation,
+    resend_activation, forgot_password,
 )
 from app.db.session import get_db
 from app.accounts.schemas import (
@@ -18,7 +18,7 @@ from app.accounts.schemas import (
     TokenResponseSchema,
     UserLoginSchema,
     UserRegistrationSchema,
-    UserResponseSchema,
+    UserResponseSchema, ForgotPasswordSchema,
 )
 
 
@@ -174,3 +174,19 @@ async def get_my_profile(
         from_attributes=True,
     )
 
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+)
+async def forgot_password_endpoint(
+    data: ForgotPasswordSchema,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    await forgot_password(db, data.email)
+
+    return {
+        "message": (
+            "If an eligible account exists for this email, "
+            "a password reset link has been sent."
+        )
+    }

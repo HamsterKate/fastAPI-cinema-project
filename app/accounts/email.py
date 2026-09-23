@@ -47,3 +47,29 @@ async def send_activation_email(
         subject="Cinema 2.0 — Activate your account",
         body=body,
     )
+
+
+async def send_password_reset_email(
+    recipient: str,
+    token: str,
+) -> None:
+    reset_link = (
+        f"{settings.password_reset_url}?"
+        f"{urlencode({'token': token})}"
+    )
+
+    body = (
+        "You requested a password reset for your Cinema 2.0 account.\n\n"
+        "Use the link below to set a new password:\n"
+        f"{reset_link}\n\n"
+        f"This link expires in "
+        f"{settings.password_reset_token_expire_minutes} minutes.\n\n"
+        "If you did not request a password reset, "
+        "you can safely ignore this email."
+    )
+
+    await send_email(
+        recipient=recipient,
+        subject="Cinema 2.0 — Reset your password",
+        body=body,
+    )

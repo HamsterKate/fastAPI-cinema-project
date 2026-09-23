@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.accounts.services import (
     activate_user,
     login_user,
+    logout_user,
     register_user,
     refresh_user_tokens,
     resend_activation,
@@ -132,3 +133,25 @@ async def refresh_tokens(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
         ) from exc
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {"description": "Invalid or revoked refresh token"},
+    },
+)
+async def logout(
+    data: TokenRefreshSchema,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    try:
+        await logout_user(db, data.refresh_token)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
+
+

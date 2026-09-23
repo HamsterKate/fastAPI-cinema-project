@@ -311,3 +311,30 @@ async def refresh_user_tokens(
         access_token=new_access_token,
         refresh_token=new_refresh_token,
     )
+
+
+async def logout_user(
+    db: AsyncSession,
+    refresh_token: str,
+) -> None:
+    payload = decode_token(refresh_token, expected_type="refresh")
+
+    result = await db.execute(
+        select(RefreshTokenModel)
+        .where(
+            RefreshTokenModel.token_hash == hash_token(refresh_token),
+            RefreshTokenModel.user_id == UUID(payload["sub"]),
+        )
+        .with_for_update()
+    )
+
+    stored_token = result.scalar_one_or_none()
+
+    if stored_token is None:
+        raise ValueError("Invalid refresh token.")
+
+    if stored_token.revoked_at is not None:
+        raise ValueError("Refresh token has been revoked.")
+
+    stored_token.revoked_at = datetime.now(timezone.utc)
+    await db.commit()

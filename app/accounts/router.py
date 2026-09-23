@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.accounts.dependencies import get_current_user
+from app.accounts.models import UserModel
 from app.accounts.services import (
     activate_user,
     login_user,
@@ -154,4 +156,21 @@ async def logout(
             detail=str(exc),
         ) from exc
 
+
+@router.get(
+    "/me",
+    response_model=UserResponseSchema,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Invalid or expired access token"},
+        403: {"description": "Account is not active"},
+    },
+)
+async def get_my_profile(
+    current_user: UserModel = Depends(get_current_user),
+) -> UserResponseSchema:
+    return UserResponseSchema.model_validate(
+        current_user,
+        from_attributes=True,
+    )
 

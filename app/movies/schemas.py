@@ -52,6 +52,29 @@ class MovieDetailSchema(MovieListItemSchema):
     languages: list[LanguageSchema]
 
 
+class MovieCreateResponseSchema(BaseModel):
+    movie: MovieDetailSchema
+    messages: list[str]
+
+
+class ActorReferenceSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def strip_name(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def require_id_or_name(self) -> Self:
+        if (self.id is None) == (self.name is None):
+            raise ValueError("Provide exactly one of id or name")
+        return self
+
+
 class MovieCreateRequestSchema(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     date: Date
@@ -62,7 +85,7 @@ class MovieCreateRequestSchema(BaseModel):
     revenue: Decimal = Field(ge=0, max_digits=15, decimal_places=2)
     country: str = Field(min_length=3, max_length=3)
     genres: list[str]
-    actors: list[str]
+    actors: list[ActorReferenceSchema]
     languages: list[str]
 
     @field_validator("date")
@@ -90,7 +113,7 @@ class MovieCreateRequestSchema(BaseModel):
             raise ValueError("Genre names cannot be blank")
         return result
 
-    @field_validator("actors", "languages")
+    @field_validator("languages")
     @classmethod
     def validate_related_names(cls, values: list[str]) -> list[str]:
         result = [value.strip() for value in values]

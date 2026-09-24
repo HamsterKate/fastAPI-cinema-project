@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID, uuid4
@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     Date,
+    DateTime,
     Enum,
     Float,
     ForeignKey,
@@ -194,7 +195,10 @@ class MovieModel(Base):
     )
     budget: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     revenue: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
-
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     country_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
         ForeignKey("countries.id", ondelete="RESTRICT"),
@@ -215,7 +219,13 @@ class MovieModel(Base):
     )
 
     __table_args__ = (
-        Index("uq_movies_name_lower_date", func.lower(name), date, unique=True),
+        Index(
+            "uq_movies_name_lower_date",
+            func.lower(name),
+            date,
+            unique=True,
+            postgresql_where=deleted_at.is_(None),
+        ),
         CheckConstraint("score >= 0 AND score <= 100", name="score_range"),
         CheckConstraint("budget >= 0", name="budget_non_negative"),
         CheckConstraint("revenue >= 0", name="revenue_non_negative"),

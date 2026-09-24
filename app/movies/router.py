@@ -21,7 +21,7 @@ from app.movies.services import (
     get_movies_page,
     get_movie_detail,
     update_movie,
-    MovieNotFoundError,
+    MovieNotFoundError, delete_movie,
 )
 
 
@@ -122,3 +122,23 @@ async def update_movie_endpoint(
         ) from exc
 
     return MovieDetailSchema.model_validate(movie)
+
+
+@router.delete(
+    "/{movie_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_movie_endpoint(
+    movie_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _current_user: UserModel = Depends(
+        require_roles(UserGroupEnum.MODERATOR, UserGroupEnum.ADMIN)
+    ),
+) -> None:
+    try:
+        await delete_movie(db, movie_id)
+    except MovieNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc

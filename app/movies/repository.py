@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -23,11 +24,13 @@ class MovieRepository:
         per_page: int,
     ) -> tuple[list[MovieModel], int]:
         total_items = await self.db.scalar(
-            select(func.count()).select_from(MovieModel)
+            select(func.count())
+            .select_from(MovieModel)
+            .where(MovieModel.deleted_at.is_(None))
         )
-
         statement = (
             select(MovieModel)
+            .where(MovieModel.deleted_at.is_(None))
             .order_by(MovieModel.date.desc(), MovieModel.id.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)
@@ -45,7 +48,10 @@ class MovieRepository:
                 selectinload(MovieModel.actors),
                 selectinload(MovieModel.languages),
             )
-            .where(MovieModel.id == movie_id)
+            .where(
+                MovieModel.id == movie_id,
+                MovieModel.deleted_at.is_(None),
+            )
         )
         result = await self.db.execute(statement)
         return result.scalar_one_or_none()
@@ -127,3 +133,11 @@ class MovieRepository:
 
         await self.db.flush()
         return movie
+
+    async def mark_deleted(
+        self,
+        movie: MovieModel,
+        deleted_at: datetime,
+    ) -> None:
+        movie.deleted_at = deleted_at
+        await self.db.flush()

@@ -1,3 +1,4 @@
+from datetime import timezone, datetime
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -217,3 +218,24 @@ async def update_movie(
     updated_movie = await repository.get_by_id(movie_id)
     assert updated_movie is not None
     return updated_movie
+
+
+async def delete_movie(
+    db: AsyncSession,
+    movie_id: UUID,
+) -> None:
+    repository = MovieRepository(db)
+    movie = await repository.get_by_id(movie_id)
+
+    if movie is None:
+        raise MovieNotFoundError("Movie not found")
+
+    try:
+        await repository.mark_deleted(
+            movie,
+            deleted_at=datetime.now(timezone.utc),
+        )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise

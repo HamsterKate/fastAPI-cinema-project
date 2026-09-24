@@ -9,7 +9,7 @@ from app.movies.repository import MovieRepository
 from app.movies.schemas import (
     ActorReferenceSchema,
     MovieCreateRequestSchema,
-    MovieListResponseSchema,
+    MovieListResponseSchema, MovieUpdateRequestSchema,
 )
 
 
@@ -184,3 +184,36 @@ async def get_movie_detail(
 ) -> MovieModel | None:
     repository = MovieRepository(db)
     return await repository.get_by_id(movie_id)
+
+
+class MovieNotFoundError(Exception):
+    pass
+
+
+async def update_movie(
+        db: AsyncSession,
+        movie_id: UUID,
+        data: MovieUpdateRequestSchema,
+) -> MovieModel:
+    repository = MovieRepository(db)
+    movie = await repository.get_by_id(movie_id)
+
+    if movie is None:
+        raise MovieNotFoundError("Movie not found")
+
+    try:
+        changes = data.model_dump(exclude_unset=True)
+        await repository.update_movie(movie, changes)
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise CatalogConflictError(
+            "Movie conflicts with an existing record"
+        ) from exc
+    except Exception:
+        await db.rollback()
+        raise
+
+    updated_movie = await repository.get_by_id(movie_id)
+    assert updated_movie is not None
+    return updated_movie

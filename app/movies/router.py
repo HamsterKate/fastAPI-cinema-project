@@ -11,13 +11,17 @@ from app.movies.schemas import (
     MovieCreateResponseSchema,
     MovieDetailSchema,
     MovieListResponseSchema,
+    MovieUpdateRequestSchema,
 )
 from app.movies.services import (
     ActorNotFoundError,
     AmbiguousActorError,
     CatalogConflictError,
     create_movie,
-    get_movies_page, get_movie_detail,
+    get_movies_page,
+    get_movie_detail,
+    update_movie,
+    MovieNotFoundError,
 )
 
 
@@ -88,5 +92,33 @@ async def get_movie_detail_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Movie not found",
         )
+
+    return MovieDetailSchema.model_validate(movie)
+
+
+@router.patch(
+    "/{movie_id}",
+    response_model=MovieDetailSchema,
+)
+async def update_movie_endpoint(
+        movie_id: UUID,
+        data: MovieUpdateRequestSchema,
+        db: AsyncSession = Depends(get_db),
+        _current_user: UserModel = Depends(
+            require_roles(UserGroupEnum.MODERATOR, UserGroupEnum.ADMIN)
+        ),
+) -> MovieDetailSchema:
+    try:
+        movie = await update_movie(db, movie_id, data)
+    except MovieNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except CatalogConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
     return MovieDetailSchema.model_validate(movie)

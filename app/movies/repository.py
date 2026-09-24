@@ -116,3 +116,14 @@ class MovieRepository:
         self.db.add(movie)
         await self.db.flush()
         return movie
+
+    async def update_movie(
+        self,
+        movie: MovieModel,
+        changes: dict[str, object],
+    ) -> MovieModel:
+        for field_name, value in changes.items():
+            setattr(movie, field_name, value)
+
+        await self.db.flush()
+        return movie

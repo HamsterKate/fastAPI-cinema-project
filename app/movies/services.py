@@ -1,11 +1,16 @@
+from uuid import UUID
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.movies.models import ActorModel, GenreModel, LanguageModel, MovieModel
-from app.movies.schemas import ActorReferenceSchema, MovieCreateRequestSchema
 from app.movies.validators import normalize_genre_name
 from app.movies.repository import MovieRepository
-from app.movies.schemas import ActorReferenceSchema
+from app.movies.schemas import (
+    ActorReferenceSchema,
+    MovieCreateRequestSchema,
+    MovieListResponseSchema,
+)
 
 
 class ActorNotFoundError(Exception):
@@ -141,3 +146,41 @@ async def create_movie(
     assert saved_movie is not None
 
     return saved_movie, messages
+
+
+async def get_movies_page(
+    db: AsyncSession,
+    page: int,
+    per_page: int,
+    path: str,
+) -> MovieListResponseSchema:
+    repository = MovieRepository(db)
+    movies, total_items = await repository.list_movies(page, per_page)
+    total_pages = (total_items + per_page - 1) // per_page
+
+    prev_page = (
+        f"{path}?page={page - 1}&per_page={per_page}"
+        if page > 1
+        else None
+    )
+    next_page = (
+        f"{path}?page={page + 1}&per_page={per_page}"
+        if page < total_pages
+        else None
+    )
+
+    return MovieListResponseSchema(
+        movies=movies,
+        prev_page=prev_page,
+        next_page=next_page,
+        total_pages=total_pages,
+        total_items=total_items,
+    )
+
+
+async def get_movie_detail(
+    db: AsyncSession,
+    movie_id: UUID,
+) -> MovieModel | None:
+    repository = MovieRepository(db)
+    return await repository.get_by_id(movie_id)

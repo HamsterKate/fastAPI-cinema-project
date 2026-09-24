@@ -56,6 +56,49 @@ class MovieCreateResponseSchema(BaseModel):
     movie: MovieDetailSchema
     messages: list[str]
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "movie": {
+                    "id": "11111111-1111-4111-8111-111111111111",
+                    "name": "Example Movie",
+                    "date": "2025-01-01",
+                    "score": 80,
+                    "overview": "A sample movie.",
+                    "status": "Released",
+                    "budget": "100.00",
+                    "revenue": "200.00",
+                    "country": {
+                        "id": "22222222-2222-4222-8222-222222222222",
+                        "code": "USA",
+                        "name": None,
+                    },
+                    "genres": [
+                        {
+                            "id": "33333333-3333-4333-8333-333333333333",
+                            "name": "Drama",
+                        }
+                    ],
+                    "actors": [
+                        {
+                            "id": "44444444-4444-4444-8444-444444444444",
+                            "name": "Example Actor",
+                        }
+                    ],
+                    "languages": [
+                        {
+                            "id": "55555555-5555-4555-8555-555555555555",
+                            "name": "English",
+                        }
+                    ],
+                },
+                "messages": [
+                    "Genre 'DRAMA' was saved as 'Drama'."
+                ],
+            }
+        }
+    )
+
 
 class ActorReferenceSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -83,7 +126,7 @@ class MovieCreateRequestSchema(BaseModel):
     status: MovieStatusEnum
     budget: Decimal = Field(ge=0, max_digits=15, decimal_places=2)
     revenue: Decimal = Field(ge=0, max_digits=15, decimal_places=2)
-    country: str = Field(min_length=3, max_length=3)
+    country: str = Field(min_length=2, max_length=3)
     genres: list[str]
     actors: list[ActorReferenceSchema]
     languages: list[str]
@@ -120,6 +163,24 @@ class MovieCreateRequestSchema(BaseModel):
         if any(not value for value in result):
             raise ValueError("Names cannot be blank")
         return result
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Example Movie",
+                "date": "2025-01-01",
+                "score": 80,
+                "overview": "A sample movie.",
+                "status": "Released",
+                "budget": "100.00",
+                "revenue": "200.00",
+                "country": "US",
+                "genres": ["DRAMA", "Non-Fiction"],
+                "actors": [{"name": "Example Actor"}],
+                "languages": ["English"],
+            }
+        }
+    )
 
 
 class MovieUpdateRequestSchema(BaseModel):

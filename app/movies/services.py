@@ -1,4 +1,5 @@
 from datetime import timezone, datetime
+from urllib.parse import urlencode
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -150,30 +151,31 @@ async def create_movie(
 
 
 async def get_movies_page(
-    db: AsyncSession,
-    page: int,
-    per_page: int,
-    path: str,
+        db: AsyncSession,
+        page: int,
+        per_page: int,
+        path: str,
+        q: str | None = None,
 ) -> MovieListResponseSchema:
+    q = (q or "").strip() or None
+
     repository = MovieRepository(db)
-    movies, total_items = await repository.list_movies(page, per_page)
+    movies, total_items = await repository.list_movies(page, per_page, q)
     total_pages = (total_items + per_page - 1) // per_page
 
-    prev_page = (
-        f"{path}?page={page - 1}&per_page={per_page}"
-        if page > 1
-        else None
-    )
-    next_page = (
-        f"{path}?page={page + 1}&per_page={per_page}"
-        if page < total_pages
-        else None
-    )
+    def page_link(target_page: int) -> str:
+        params: dict[str, int | str] = {
+            "page": target_page,
+            "per_page": per_page,
+        }
+        if q is not None:
+            params["q"] = q
+        return f"{path}?{urlencode(params)}"
 
     return MovieListResponseSchema(
         movies=movies,
-        prev_page=prev_page,
-        next_page=next_page,
+        prev_page=page_link(page - 1) if page > 1 else None,
+        next_page=page_link(page + 1) if page < total_pages else None,
         total_pages=total_pages,
         total_items=total_items,
     )

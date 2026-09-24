@@ -33,16 +33,18 @@ router = APIRouter(prefix="/movies", tags=["movies"])
     response_model=MovieListResponseSchema,
 )
 async def list_movies_endpoint(
-    request: Request,
-    page: int = Query(default=1, ge=1),
-    per_page: int = Query(default=10, ge=1, le=20),
-    db: AsyncSession = Depends(get_db),
+        request: Request,
+        page: int = Query(default=1, ge=1),
+        per_page: int = Query(default=10, ge=1, le=20),
+        q: str | None = Query(default=None, max_length=100),
+        db: AsyncSession = Depends(get_db),
 ) -> MovieListResponseSchema:
     return await get_movies_page(
         db=db,
         page=page,
         per_page=per_page,
         path=request.url.path,
+        q=q,
     )
 
 

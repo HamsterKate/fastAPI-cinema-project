@@ -19,18 +19,27 @@ class MovieRepository:
         self.db = db
 
     async def list_movies(
-        self,
-        page: int,
-        per_page: int,
+            self,
+            page: int,
+            per_page: int,
+            q: str | None = None,
     ) -> tuple[list[MovieModel], int]:
+        conditions = [MovieModel.deleted_at.is_(None)]
+
+        if q:
+            conditions.append(
+                MovieModel.name.icontains(q, autoescape=True)
+            )
+
         total_items = await self.db.scalar(
             select(func.count())
             .select_from(MovieModel)
-            .where(MovieModel.deleted_at.is_(None))
+            .where(*conditions)
         )
+
         statement = (
             select(MovieModel)
-            .where(MovieModel.deleted_at.is_(None))
+            .where(*conditions)
             .order_by(MovieModel.date.desc(), MovieModel.id.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)

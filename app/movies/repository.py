@@ -11,6 +11,7 @@ from app.movies.models import (
     GenreModel,
     LanguageModel,
     MovieModel,
+    MovieStatusEnum,
 )
 
 
@@ -23,29 +24,43 @@ class MovieRepository:
             page: int,
             per_page: int,
             q: str | None = None,
+            genre: str | None = None,
+            country: str | None = None,
+            movie_status: MovieStatusEnum | None = None,
     ) -> tuple[list[MovieModel], int]:
-        conditions = [MovieModel.deleted_at.is_(None)]
+        query = select(MovieModel).where(
+            MovieModel.deleted_at.is_(None)
+        )
 
         if q:
-            conditions.append(
+            query = query.where(
                 MovieModel.name.icontains(q, autoescape=True)
             )
 
+        if genre:
+            query = (
+                query.join(MovieModel.genres)
+                .where(func.lower(GenreModel.name) == genre.lower())
+            )
+        if country:
+            query = (
+                query.join(MovieModel.country)
+                .where(func.lower(CountryModel.code) == country.lower())
+            )
+        if movie_status is not None:
+            query = query.where(MovieModel.status == movie_status)
+
         total_items = await self.db.scalar(
-            select(func.count())
-            .select_from(MovieModel)
-            .where(*conditions)
+            select(func.count()).select_from(query.subquery())
         )
 
         statement = (
-            select(MovieModel)
-            .where(*conditions)
+            query
             .order_by(MovieModel.date.desc(), MovieModel.id.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)
         )
         result = await self.db.execute(statement)
-
         return list(result.scalars().all()), total_items or 0
 
     async def get_by_id(self, movie_id: UUID) -> MovieModel | None:

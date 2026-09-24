@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.accounts.dependencies import require_roles
 from app.accounts.models import UserGroupEnum, UserModel
 from app.db.session import get_db
+from app.movies.models import MovieStatusEnum
 from app.movies.schemas import (
     MovieCreateRequestSchema,
     MovieCreateResponseSchema,
@@ -23,7 +24,7 @@ from app.movies.services import (
     update_movie,
     MovieNotFoundError, delete_movie,
 )
-
+from app.movies.validators import normalize_country_code
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -37,14 +38,34 @@ async def list_movies_endpoint(
         page: int = Query(default=1, ge=1),
         per_page: int = Query(default=10, ge=1, le=20),
         q: str | None = Query(default=None, max_length=100),
+        genre: str | None = Query(default=None, max_length=255),
+        country: str | None = Query(default=None, max_length=20),
+        movie_status: MovieStatusEnum | None = Query(
+                default=None,
+                alias="status",
+            ),
         db: AsyncSession = Depends(get_db),
 ) -> MovieListResponseSchema:
+    country = (
+        normalize_country_code(country)
+        if country is not None
+        else None
+    )
+
+    if country and len(country) not in {2, 3}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Country code must contain 2 or 3 characters",
+        )
     return await get_movies_page(
         db=db,
         page=page,
         per_page=per_page,
         path=request.url.path,
         q=q,
+        genre=genre,
+        country=country,
+        movie_status=movie_status,
     )
 
 

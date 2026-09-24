@@ -5,13 +5,14 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.movies.models import ActorModel, GenreModel, LanguageModel, MovieModel
-from app.movies.validators import normalize_genre_name
+from app.movies.models import ActorModel, GenreModel, LanguageModel, MovieModel, MovieStatusEnum
+from app.movies.validators import normalize_genre_name, normalize_country_code
 from app.movies.repository import MovieRepository
 from app.movies.schemas import (
     ActorReferenceSchema,
     MovieCreateRequestSchema,
-    MovieListResponseSchema, MovieUpdateRequestSchema,
+    MovieListResponseSchema,
+    MovieUpdateRequestSchema,
 )
 
 
@@ -156,11 +157,27 @@ async def get_movies_page(
         per_page: int,
         path: str,
         q: str | None = None,
+        genre: str | None = None,
+        country: str | None = None,
+        movie_status: MovieStatusEnum | None = None,
 ) -> MovieListResponseSchema:
     q = (q or "").strip() or None
 
+    genre = (genre or "").strip() or None
+    if genre is not None:
+        genre = normalize_genre_name(genre)
+
+    country = normalize_country_code(country or "") or None
+
     repository = MovieRepository(db)
-    movies, total_items = await repository.list_movies(page, per_page, q)
+    movies, total_items = await repository.list_movies(
+        page=page,
+        per_page=per_page,
+        q=q,
+        genre=genre,
+        country=country,
+        movie_status=movie_status,
+    )
     total_pages = (total_items + per_page - 1) // per_page
 
     def page_link(target_page: int) -> str:
@@ -170,6 +187,13 @@ async def get_movies_page(
         }
         if q is not None:
             params["q"] = q
+        if genre is not None:
+            params["genre"] = genre
+        if country is not None:
+            params["country"] = country
+        if movie_status is not None:
+            params["status"] = movie_status.value
+
         return f"{path}?{urlencode(params)}"
 
     return MovieListResponseSchema(

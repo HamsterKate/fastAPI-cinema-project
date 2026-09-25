@@ -14,3 +14,7 @@ def normalize_genre_name(value: str) -> str:
 
 def normalize_country_code(value: str) -> str:
     return value.strip().upper()
+
+
+def is_valid_country_code(value: str) -> bool:
+    return len(value) in {2, 3} and value.isascii() and value.isalpha()

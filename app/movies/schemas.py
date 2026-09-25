@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.movies.models import MovieStatusEnum
-from app.movies.validators import normalize_country_code
+from app.movies.validators import normalize_country_code, is_valid_country_code
 
 
 class CatalogReadSchema(BaseModel):
@@ -147,6 +147,13 @@ class MovieCreateRequestSchema(BaseModel):
     @classmethod
     def normalize_country(cls, value: object) -> object:
         return normalize_country_code(value) if isinstance(value, str) else value
+
+    @field_validator("country")
+    @classmethod
+    def validate_country(cls, value: str) -> str:
+        if not is_valid_country_code(value):
+            raise ValueError("Country code must contain 2 or 3 Latin letters")
+        return value
 
     @field_validator("genres")
     @classmethod

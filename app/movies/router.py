@@ -24,7 +24,7 @@ from app.movies.services import (
     update_movie,
     MovieNotFoundError, delete_movie,
 )
-from app.movies.validators import normalize_country_code
+from app.movies.validators import normalize_country_code, is_valid_country_code
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -52,11 +52,12 @@ async def list_movies_endpoint(
         else None
     )
 
-    if country and len(country) not in {2, 3}:
+    if country and not is_valid_country_code(country):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Country code must contain 2 or 3 characters",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Country code must contain 2 or 3 Latin letters",
         )
+
     return await get_movies_page(
         db=db,
         page=page,

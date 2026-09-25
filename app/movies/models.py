@@ -91,7 +91,7 @@ class GenreModel(Base):
         default=uuid4,
     )
     name: Mapped[str] = mapped_column(
-        String(255),
+        String(100),
         nullable=False,
     )
     movies: Mapped[list["MovieModel"]] = relationship(
@@ -139,7 +139,7 @@ class CountryModel(Base):
         nullable=False,
     )
     name: Mapped[str | None] = mapped_column(
-        String(255),
+        String(100),
         nullable=True,
     )
     movies: Mapped[list["MovieModel"]] = relationship(
@@ -159,7 +159,7 @@ class LanguageModel(Base):
         default=uuid4,
     )
     name: Mapped[str] = mapped_column(
-        String(255),
+        String(100),
         nullable=False,
     )
     movies: Mapped[list["MovieModel"]] = relationship(

@@ -154,6 +154,8 @@ class MovieCreateRequestSchema(BaseModel):
         result = [value.strip() for value in values]
         if any(not value for value in result):
             raise ValueError("Genre names cannot be blank")
+        if any(len(value) > 100 for value in result):
+            raise ValueError("Genre names cannot exceed 100 characters")
         return result
 
     @field_validator("languages")
@@ -162,6 +164,8 @@ class MovieCreateRequestSchema(BaseModel):
         result = [value.strip() for value in values]
         if any(not value for value in result):
             raise ValueError("Names cannot be blank")
+        if any(len(value) > 100 for value in result):
+            raise ValueError("Names cannot exceed 100 characters")
         return result
 
     model_config = ConfigDict(

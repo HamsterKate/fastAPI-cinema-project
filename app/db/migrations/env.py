@@ -4,9 +4,10 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from app.accounts import models
 from app.core.config import settings
 from app.db.models.base import Base
-from app.accounts import models
+from app.favorites import models as favorites_models
 from app.movies import models as movies_models
 
 

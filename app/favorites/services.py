@@ -52,16 +52,17 @@ async def remove_favorite(
 
 
 async def get_favorites_page(
-    db: AsyncSession,
-    user_id: UUID,
-    page: int,
-    per_page: int,
+        db: AsyncSession,
+        user_id: UUID,
+        page: int,
+        per_page: int,
+        path: str,
 ) -> MovieListResponseSchema:
     repository = FavoriteRepository(db)
     movies, total_items = await repository.list_movies(user_id, page, per_page)
 
     prev_page, next_page, total_pages = build_pagination_links(
-        "/api/v2/favorites",
+        path,
         page,
         per_page,
         total_items,

@@ -29,7 +29,11 @@ async def list_favorites_endpoint(
     current_user: UserModel = Depends(get_current_user),
 ) -> MovieListResponseSchema:
     return await get_favorites_page(
-        db, current_user.id, page, per_page
+        db,
+        current_user.id,
+        page,
+        per_page,
+        request.url.path,
     )
 
 

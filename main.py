@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 
 from app.accounts.router import router as accounts_router
-from app.movies.router import router as movies_router
 from app.core.config import settings
+from app.movies.router import router as movies_router
+from app.favorites.router import router as favorites_router
 
 
 app = FastAPI(
@@ -17,5 +18,10 @@ app.include_router(
 
 app.include_router(
     movies_router,
+    prefix=settings.api_prefix,
+)
+
+app.include_router(
+    favorites_router,
     prefix=settings.api_prefix,
 )

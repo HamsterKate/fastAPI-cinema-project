@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.favorites.models import FavoriteMovieModel
@@ -30,18 +31,17 @@ class FavoriteRepository:
             (user_id, movie_id),
         )
 
-    async def add(
-        self,
-        user_id: UUID,
-        movie_id: UUID,
-    ) -> FavoriteMovieModel:
-        favorite = FavoriteMovieModel(
-            user_id=user_id,
-            movie_id=movie_id,
+    async def add(self, user_id: UUID, movie_id: UUID) -> bool:
+        statement = (
+            insert(FavoriteMovieModel)
+            .values(user_id=user_id, movie_id=movie_id)
+            .on_conflict_do_nothing(
+                index_elements=["user_id", "movie_id"]
+            )
+            .returning(FavoriteMovieModel.movie_id)
         )
-        self.db.add(favorite)
-        await self.db.flush()
-        return favorite
+        inserted_movie_id = await self.db.scalar(statement)
+        return inserted_movie_id is not None
 
     async def remove(self, favorite: FavoriteMovieModel) -> None:
         await self.db.delete(favorite)

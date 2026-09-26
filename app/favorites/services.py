@@ -32,7 +32,9 @@ async def add_favorite(
     if await repository.get_favorite(user_id, movie_id):
         raise FavoriteAlreadyExistsError
 
-    await repository.add(user_id, movie_id)
+    if not await repository.add(user_id, movie_id):
+        raise FavoriteAlreadyExistsError
+
     await db.commit()
 
 

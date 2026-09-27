@@ -18,6 +18,7 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.models.base import Base
+from app.payments.models import PaymentModel
 
 
 class OrderStatusEnum(StrEnum):
@@ -71,6 +72,10 @@ class OrderModel(Base):
     items: Mapped[list["OrderItemModel"]] = relationship(
         back_populates="order",
         cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    payments: Mapped[list["PaymentModel"]] = relationship(
+        back_populates="order",
         passive_deletes=True,
     )
 

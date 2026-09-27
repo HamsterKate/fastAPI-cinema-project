@@ -15,7 +15,11 @@ from app.payments.repository import PaymentRepository
 from app.payments.schemas import PaymentCheckoutResponseSchema
 
 
-class OrderPaymentError(Exception):
+class OrderNotFoundForPaymentError(Exception):
+    pass
+
+
+class OrderCannotBePaidError(Exception):
     pass
 
 
@@ -57,10 +61,10 @@ async def create_checkout_session(
     order = await get_order_for_checkout(db, order_id, user_id)
 
     if order is None:
-        raise OrderPaymentError("Order not found")
+        raise OrderNotFoundForPaymentError("Order not found")
 
     if order.status is not OrderStatusEnum.PENDING:
-        raise OrderPaymentError("Only pending orders can be paid")
+        raise OrderNotFoundForPaymentError("Only pending orders can be paid")
 
     stripe_client = stripe.StripeClient(settings.stripe_secret_key)
 

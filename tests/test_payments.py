@@ -223,7 +223,13 @@ async def test_mark_payment_succeeded_is_idempotent(
 
 def test_webhook_rejects_request_without_signature(
     client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(
+        "app.payments.router.settings.stripe_webhook_secret",
+        "whsec_test",
+    )
+
     response = client.post(
         "/api/v2/payments/webhook",
         content=b"{}",

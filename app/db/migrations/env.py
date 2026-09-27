@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from app.cart import models as cart_models
 from app.core.config import settings
 from app.db.models.base import Base
 from app.accounts import models

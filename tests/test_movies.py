@@ -50,6 +50,36 @@ def test_is_valid_country_code_rejects_invalid_values(
     assert is_valid_country_code(country_code) is False
 
 
+@pytest.fixture
+def created_movie(
+    client: TestClient,
+    moderator_headers: dict[str, str],
+) -> dict[str, object]:
+    suffix = uuid4().hex
+    response = client.post(
+        "/api/v2/movies",
+        headers=moderator_headers,
+        json={
+            "name": f"Test movie {suffix}",
+            "date": "2025-01-01",
+            "score": 85,
+            "overview": "A test movie overview.",
+            "status": "Released",
+            "budget": "100.00",
+            "revenue": "250.00",
+            "price": "9.99",
+            "country": "UA",
+            "genres": ["Drama"],
+            "actors": [{"name": f"Test actor {suffix}"}],
+            "languages": ["English"],
+        },
+    )
+
+    assert response.status_code == 201
+
+    return response.json()["movie"]
+
+
 def test_build_pagination_links_preserves_filters() -> None:
     previous_page, next_page, total_pages = build_pagination_links(
         path="/api/v2/movies",
@@ -231,5 +261,83 @@ def test_normalize_genre_name(
     expected_genre: str,
 ) -> None:
     assert normalize_genre_name(raw_genre) == expected_genre
+
+
+def test_moderator_can_create_movie(
+    client: TestClient,
+    moderator_headers: dict[str, str],
+) -> None:
+    movie_name = f"Test movie {uuid4().hex}"
+    actor_name = f"Test actor {uuid4().hex}"
+
+    response = client.post(
+        "/api/v2/movies",
+        headers=moderator_headers,
+        json={
+            "name": movie_name,
+            "date": "2025-01-01",
+            "score": 85,
+            "overview": "A test movie overview.",
+            "status": "Released",
+            "budget": "100.00",
+            "revenue": "250.00",
+            "price": "9.99",
+            "country": "UA",
+            "genres": ["Drama"],
+            "actors": [{"name": actor_name}],
+            "languages": ["English"],
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+    assert data["movie"]["name"] == movie_name
+    assert data["movie"]["country"]["code"] == "UA"
+    assert data["movie"]["genres"][0]["name"] == "Drama"
+    assert data["movie"]["actors"][0]["name"] == actor_name
+    assert data["movie"]["languages"][0]["name"] == "English"
+
+
+def test_moderator_can_update_movie(
+    client: TestClient,
+    moderator_headers: dict[str, str],
+    created_movie: dict[str, object],
+) -> None:
+    response = client.patch(
+        f"/api/v2/movies/{created_movie['id']}",
+        headers=moderator_headers,
+        json={
+            "score": 90,
+            "price": "12.99",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["score"] == 90
+    assert data["price"] == "12.99"
+
+
+def test_moderator_can_soft_delete_movie(
+    client: TestClient,
+    moderator_headers: dict[str, str],
+    created_movie: dict[str, object],
+) -> None:
+    movie_id = created_movie["id"]
+
+    delete_response = client.delete(
+        f"/api/v2/movies/{movie_id}",
+        headers=moderator_headers,
+    )
+
+    assert delete_response.status_code == 204
+
+    detail_response = client.get(
+        f"/api/v2/movies/{movie_id}",
+    )
+
+    assert detail_response.status_code == 404
 
 

@@ -1,17 +1,24 @@
 import re
-from email import policy
-from email import message_from_string
-from email.header import decode_header, make_header
-from urllib.parse import unquote
-
-import httpx
-
 from collections.abc import Generator
+from email import policy
+from email.header import decode_header, make_header
+from email import message_from_string
+from urllib.parse import unquote
 from uuid import uuid4
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import delete, select
 
+from app.accounts.jwt import create_access_token
+from app.accounts.models import (
+    UserGroupEnum,
+    UserGroupModel,
+    UserModel,
+)
+from app.accounts.security import hash_password
+from app.db.database import async_session_factory
 from main import app
 
 
@@ -122,3 +129,49 @@ def active_user(
     }
 
 
+@pytest.fixture
+def moderator_headers(
+    client: TestClient,
+) -> Generator[dict[str, str], None, None]:
+    user_id = uuid4()
+    email = f"moderator-{user_id.hex}@example.com"
+
+    async def create_moderator() -> None:
+        async with async_session_factory() as db:
+            group = await db.scalar(
+                select(UserGroupModel).where(
+                    UserGroupModel.name == UserGroupEnum.MODERATOR
+                )
+            )
+            assert group is not None
+
+            db.add(
+                UserModel(
+                    id=user_id,
+                    email=email,
+                    hashed_password=hash_password(
+                        "StrongPassword1!"
+                    ),
+                    is_active=True,
+                    is_verified=True,
+                    group_id=group.id,
+                )
+            )
+            await db.commit()
+
+    async def delete_moderator() -> None:
+        async with async_session_factory() as db:
+            await db.execute(
+                delete(UserModel).where(UserModel.id == user_id)
+            )
+            await db.commit()
+
+    client.portal.call(create_moderator)
+
+    yield {
+        "Authorization": (
+            f"Bearer {create_access_token(user_id)}"
+        )
+    }
+
+    client.portal.call(delete_moderator)

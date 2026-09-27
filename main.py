@@ -6,6 +6,7 @@ from app.movies.router import router as movies_router
 from app.core.config import settings
 from app.orders.router import router as orders_router
 from app.payments.router import router as payments_router
+from app.profiles.router import router as profiles_router
 
 
 app = FastAPI(
@@ -15,6 +16,11 @@ app = FastAPI(
 
 app.include_router(
     accounts_router,
+    prefix=settings.api_prefix,
+)
+
+app.include_router(
+    profiles_router,
     prefix=settings.api_prefix,
 )
 

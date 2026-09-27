@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.payments.models import PaymentModel
 
@@ -17,11 +18,13 @@ class PaymentRepository:
         return payment
 
     async def get_by_checkout_session_id(
-        self,
-        checkout_session_id: str,
+            self,
+            checkout_session_id: str,
     ) -> PaymentModel | None:
         result = await self.db.execute(
-            select(PaymentModel).where(
+            select(PaymentModel)
+            .options(selectinload(PaymentModel.order))
+            .where(
                 PaymentModel.stripe_checkout_session_id
                 == checkout_session_id
             )

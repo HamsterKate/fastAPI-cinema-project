@@ -123,3 +123,36 @@ async def create_checkout_session(
         checkout_url=checkout_session.url,
         status=payment.status,
     )
+
+
+async def mark_payment_succeeded(
+    db: AsyncSession,
+    checkout_session: dict[str, object],
+) -> None:
+    if checkout_session.get("payment_status") != "paid":
+        return
+
+    checkout_session_id = str(checkout_session["id"])
+
+    repository = PaymentRepository(db)
+    payment = await repository.get_by_checkout_session_id(
+        checkout_session_id
+    )
+
+    if payment is None:
+        return
+
+    if payment.status is PaymentStatusEnum.SUCCEEDED:
+        return
+
+    payment.status = PaymentStatusEnum.SUCCEEDED
+    payment.paid_at = datetime.now(timezone.utc)
+
+    payment_intent_id = checkout_session.get("payment_intent")
+    if payment_intent_id is not None:
+        payment.stripe_payment_intent_id = str(payment_intent_id)
+
+    if payment.order.status is OrderStatusEnum.PENDING:
+        payment.order.status = OrderStatusEnum.PAID
+
+    await db.commit()

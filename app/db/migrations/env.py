@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.db.models.base import Base
 from app.accounts import models
 from app.movies import models as movies_models
+from app.orders import models as orders_models
 
 
 # this is the Alembic Config object, which provides

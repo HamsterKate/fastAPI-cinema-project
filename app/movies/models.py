@@ -23,6 +23,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.cart.models import CartItemModel
 from app.db.models.base import Base
+from app.orders.models import OrderItemModel
 
 
 class MovieStatusEnum(StrEnum):
@@ -223,6 +224,10 @@ class MovieModel(Base):
         back_populates="movies",
     )
     cart_items: Mapped[list["CartItemModel"]] = relationship(
+        back_populates="movie",
+        passive_deletes=True,
+    )
+    order_items: Mapped[list["OrderItemModel"]] = relationship(
         back_populates="movie",
         passive_deletes=True,
     )

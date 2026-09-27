@@ -2,6 +2,8 @@ import pytest
 
 from uuid import uuid4
 
+from fastapi.testclient import TestClient
+
 from app.accounts.jwt import (
     create_access_token,
     create_refresh_token,
@@ -118,3 +120,48 @@ def test_access_token_cannot_be_used_as_refresh_token() -> None:
             access_token,
             expected_type="refresh",
         )
+
+
+def test_register_creates_inactive_user(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    response = client.post(
+        "/api/v2/accounts/register",
+        json={
+            "email": unique_email,
+            "password": "StrongPassword1!",
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+    assert data["email"] == unique_email
+    assert data["is_active"] is False
+    assert data["is_verified"] is False
+    assert data["id"]
+    assert data["group_id"]
+
+
+def test_register_rejects_duplicate_email(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    payload = {
+        "email": unique_email,
+        "password": "StrongPassword1!",
+    }
+
+    first_response = client.post(
+        "/api/v2/accounts/register",
+        json=payload,
+    )
+    second_response = client.post(
+        "/api/v2/accounts/register",
+        json=payload,
+    )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 409
+

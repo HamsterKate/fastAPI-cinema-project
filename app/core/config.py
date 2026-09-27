@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
+    stripe_secret_key: str
+    stripe_webhook_secret: str = ""
+    stripe_currency: str = "usd"
+    stripe_success_url: str
+    stripe_cancel_url: str
+
     password_reset_url: str
     password_reset_token_expire_minutes: int = 15
 

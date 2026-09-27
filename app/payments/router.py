@@ -1,10 +1,13 @@
+import stripe
+
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounts.dependencies import get_current_user
 from app.accounts.models import UserModel
+from app.core.config import settings
 from app.db.session import get_db
 from app.payments.schemas import PaymentCheckoutResponseSchema
 from app.payments.service import (
@@ -12,6 +15,7 @@ from app.payments.service import (
     OrderNotFoundForPaymentError,
     StripeCheckoutError,
     create_checkout_session,
+    mark_payment_succeeded,
 )
 
 
@@ -59,3 +63,56 @@ async def create_checkout_session_endpoint(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
+
+
+@router.post(
+    "/webhook",
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"description": "Invalid webhook payload or signature"},
+        503: {"description": "Stripe webhook is not configured"},
+    },
+)
+async def stripe_webhook_endpoint(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, bool]:
+    if not settings.stripe_webhook_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Stripe webhook is not configured",
+        )
+
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+
+    if signature is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing Stripe-Signature header",
+        )
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload,
+            signature,
+            settings.stripe_webhook_secret,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Stripe webhook payload",
+        ) from exc
+    except stripe.SignatureVerificationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Stripe webhook signature",
+        ) from exc
+
+    if event["type"] == "checkout.session.completed":
+        await mark_payment_succeeded(
+            db,
+            dict(event["data"]["object"]),
+        )
+
+    return {"received": True}

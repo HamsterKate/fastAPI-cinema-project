@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.pagination import build_pagination_links
 from app.movies.models import ActorModel, GenreModel, LanguageModel, MovieModel, MovieStatusEnum
 from app.movies.validators import normalize_genre_name, normalize_country_code
 from app.movies.repository import MovieRepository
@@ -180,26 +181,28 @@ async def get_movies_page(
     )
     total_pages = (total_items + per_page - 1) // per_page
 
-    def page_link(target_page: int) -> str:
-        params: dict[str, int | str] = {
-            "page": target_page,
-            "per_page": per_page,
-        }
-        if q is not None:
-            params["q"] = q
-        if genre is not None:
-            params["genre"] = genre
-        if country is not None:
-            params["country"] = country
-        if movie_status is not None:
-            params["status"] = movie_status.value
+    query_params: dict[str, str] = {}
+    if q is not None:
+        query_params["q"] = q
+    if genre is not None:
+        query_params["genre"] = genre
+    if country is not None:
+        query_params["country"] = country
+    if movie_status is not None:
+        query_params["status"] = movie_status.value
 
-        return f"{path}?{urlencode(params)}"
+    prev_page, next_page, total_pages = build_pagination_links(
+        path=path,
+        page=page,
+        per_page=per_page,
+        total_items=total_items,
+        query_params=query_params,
+    )
 
     return MovieListResponseSchema(
         movies=movies,
-        prev_page=page_link(page - 1) if page > 1 else None,
-        next_page=page_link(page + 1) if page < total_pages else None,
+        prev_page=prev_page,
+        next_page=next_page,
         total_pages=total_pages,
         total_items=total_items,
     )

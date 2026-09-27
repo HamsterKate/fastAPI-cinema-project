@@ -13,7 +13,10 @@ from app.accounts.schemas import UserRegistrationSchema
 from app.accounts.security import hash_password, verify_password
 from app.accounts.tokens import generate_token, hash_token
 from pydantic import ValidationError
-from tests.conftest import get_activation_token
+from tests.conftest import (
+    get_activation_token,
+    get_password_reset_token,
+)
 
 
 @pytest.mark.parametrize(
@@ -378,3 +381,170 @@ def test_logout_revokes_refresh_token(
         "Refresh token has been revoked."
     )
 
+
+def test_reset_password_allows_login_with_new_password(
+    client: TestClient,
+    active_user: dict[str, str],
+) -> None:
+    new_password = "NewStrongPassword1!"
+
+    request_response = client.post(
+        "/api/v2/accounts/forgot-password",
+        json={"email": active_user["email"]},
+    )
+    assert request_response.status_code == 200
+
+    reset_token = get_password_reset_token(
+        active_user["email"],
+    )
+
+    reset_response = client.post(
+        "/api/v2/accounts/reset-password",
+        json={
+            "token": reset_token,
+            "new_password": new_password,
+        },
+    )
+    assert reset_response.status_code == 200
+
+    old_password_login = client.post(
+        "/api/v2/accounts/login",
+        json={
+            "email": active_user["email"],
+            "password": active_user["password"],
+        },
+    )
+    assert old_password_login.status_code == 401
+
+    new_password_login = client.post(
+        "/api/v2/accounts/login",
+        json={
+            "email": active_user["email"],
+            "password": new_password,
+        },
+    )
+    assert new_password_login.status_code == 200
+
+    reused_token_response = client.post(
+        "/api/v2/accounts/reset-password",
+        json={
+            "token": reset_token,
+            "new_password": "AnotherPassword1!",
+        },
+    )
+
+    assert reused_token_response.status_code == 400
+    assert reused_token_response.json()["detail"] == (
+        "Invalid or expired password reset token."
+    )
+
+    old_refresh_response = client.post(
+        "/api/v2/accounts/refresh",
+        json={
+            "refresh_token": active_user["refresh_token"],
+        },
+    )
+
+    assert old_refresh_response.status_code == 401
+    assert old_refresh_response.json()["detail"] == (
+        "Refresh token has been revoked."
+    )
+
+
+def test_reset_password_rejects_invalid_token(
+    client: TestClient,
+) -> None:
+    response = client.post(
+        "/api/v2/accounts/reset-password",
+        json={
+            "token": "invalid-token",
+            "new_password": "NewStrongPassword1!",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Invalid or expired password reset token."
+    )
+
+
+def test_forgot_password_hides_unknown_email(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    response = client.post(
+        "/api/v2/accounts/forgot-password",
+        json={"email": unique_email},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": (
+            "If an eligible account exists for this email, "
+            "a password reset link has been sent."
+        )
+    }
+
+
+def test_resend_activation_replaces_previous_token(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    password = "StrongPassword1!"
+
+    registration_response = client.post(
+        "/api/v2/accounts/register",
+        json={
+            "email": unique_email,
+            "password": password,
+        },
+    )
+    assert registration_response.status_code == 201
+
+    old_token = get_activation_token(unique_email)
+
+    resend_response = client.post(
+        "/api/v2/accounts/resend-activation",
+        json={"email": unique_email},
+    )
+
+    assert resend_response.status_code == 200
+    assert resend_response.json() == {
+        "message": (
+            "If your account exists and is not activated, "
+            "a new activation email has been sent."
+        )
+    }
+
+    new_token = get_activation_token(unique_email)
+    assert new_token != old_token
+
+    old_token_response = client.get(
+        "/api/v2/accounts/activate",
+        params={"token": old_token},
+    )
+    assert old_token_response.status_code == 400
+
+    new_token_response = client.get(
+        "/api/v2/accounts/activate",
+        params={"token": new_token},
+    )
+    assert new_token_response.status_code == 200
+
+
+def test_resend_activation_hides_unknown_email(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    response = client.post(
+        "/api/v2/accounts/resend-activation",
+        json={"email": unique_email},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": (
+            "If your account exists and is not activated, "
+            "a new activation email has been sent."
+        )
+    }

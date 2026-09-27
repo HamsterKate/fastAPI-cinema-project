@@ -1,6 +1,7 @@
 import re
 from email import policy
 from email import message_from_string
+from email.header import decode_header, make_header
 from urllib.parse import unquote
 
 import httpx
@@ -25,7 +26,10 @@ def unique_email() -> str:
     return f"test-{uuid4().hex}@example.com"
 
 
-def get_activation_token(recipient: str) -> str:
+def get_token_from_email(
+    recipient: str,
+    subject: str,
+) -> str:
     response = httpx.get(
         "http://mailhog:8025/api/v2/messages",
         timeout=5,
@@ -34,8 +38,13 @@ def get_activation_token(recipient: str) -> str:
 
     for item in response.json()["items"]:
         recipients = item["Content"]["Headers"].get("To", [])
+        subjects = item["Content"]["Headers"].get("Subject", [])
+        decoded_subjects = [
+            str(make_header(decode_header(value)))
+            for value in subjects
+        ]
 
-        if recipient not in recipients:
+        if recipient not in recipients or subject not in decoded_subjects:
             continue
 
         message = message_from_string(
@@ -52,7 +61,21 @@ def get_activation_token(recipient: str) -> str:
             return unquote(match.group(1))
 
     raise AssertionError(
-        f"Activation email for {recipient} was not found."
+        f"Email with subject {subject!r} for {recipient} was not found."
+    )
+
+
+def get_activation_token(recipient: str) -> str:
+    return get_token_from_email(
+        recipient,
+        "Cinema 2.0 — Activate your account",
+    )
+
+
+def get_password_reset_token(recipient: str) -> str:
+    return get_token_from_email(
+        recipient,
+        "Cinema 2.0 — Reset your password",
     )
 
 
@@ -97,3 +120,5 @@ def active_user(
         "access_token": tokens["access_token"],
         "refresh_token": tokens["refresh_token"],
     }
+
+

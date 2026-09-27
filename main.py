@@ -4,6 +4,7 @@ from app.accounts.router import router as accounts_router
 from app.cart.router import router as cart_router
 from app.movies.router import router as movies_router
 from app.core.config import settings
+from app.orders.router import router as orders_router
 
 
 app = FastAPI(
@@ -23,5 +24,10 @@ app.include_router(
 
 app.include_router(
     cart_router,
+    prefix=settings.api_prefix,
+)
+
+app.include_router(
+    orders_router,
     prefix=settings.api_prefix,
 )

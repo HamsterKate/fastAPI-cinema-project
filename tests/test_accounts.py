@@ -13,6 +13,7 @@ from app.accounts.schemas import UserRegistrationSchema
 from app.accounts.security import hash_password, verify_password
 from app.accounts.tokens import generate_token, hash_token
 from pydantic import ValidationError
+from tests.conftest import get_activation_token
 
 
 @pytest.mark.parametrize(
@@ -164,4 +165,216 @@ def test_register_rejects_duplicate_email(
 
     assert first_response.status_code == 201
     assert second_response.status_code == 409
+
+
+def test_activate_rejects_invalid_token(
+    client: TestClient,
+) -> None:
+    response = client.get(
+        "/api/v2/accounts/activate",
+        params={"token": "invalid-token"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid activation token."
+
+
+def test_activate_user_from_activation_email(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    registration_response = client.post(
+        "/api/v2/accounts/register",
+        json={
+            "email": unique_email,
+            "password": "StrongPassword1!",
+        },
+    )
+
+    assert registration_response.status_code == 201
+
+    token = get_activation_token(unique_email)
+
+    activation_response = client.get(
+        "/api/v2/accounts/activate",
+        params={"token": token},
+    )
+
+    assert activation_response.status_code == 200
+    assert activation_response.json() == {
+        "message": "Account activated successfully.",
+    }
+    repeated_activation_response = client.get(
+        "/api/v2/accounts/activate",
+        params={"token": token},
+    )
+
+    assert repeated_activation_response.status_code == 400
+    assert repeated_activation_response.json()["detail"] == (
+        "Invalid activation token."
+    )
+
+
+def test_login_returns_tokens_for_activated_user(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    password = "StrongPassword1!"
+
+    registration_response = client.post(
+        "/api/v2/accounts/register",
+        json={
+            "email": unique_email,
+            "password": password,
+        },
+    )
+    assert registration_response.status_code == 201
+
+    token = get_activation_token(unique_email)
+
+    activation_response = client.get(
+        "/api/v2/accounts/activate",
+        params={"token": token},
+    )
+    assert activation_response.status_code == 200
+
+    login_response = client.post(
+        "/api/v2/accounts/login",
+        json={
+            "email": unique_email,
+            "password": password,
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    data = login_response.json()
+    assert data["access_token"]
+    assert data["refresh_token"]
+    assert data["token_type"] == "bearer"
+
+
+def test_login_rejects_inactive_user(
+    client: TestClient,
+    unique_email: str,
+) -> None:
+    password = "StrongPassword1!"
+
+    registration_response = client.post(
+        "/api/v2/accounts/register",
+        json={
+            "email": unique_email,
+            "password": password,
+        },
+    )
+    assert registration_response.status_code == 201
+
+    login_response = client.post(
+        "/api/v2/accounts/login",
+        json={
+            "email": unique_email,
+            "password": password,
+        },
+    )
+
+    assert login_response.status_code == 403
+    assert login_response.json()["detail"] == "Account is not activated."
+
+
+def test_get_my_profile_returns_authenticated_user(
+    client: TestClient,
+    active_user: dict[str, str],
+) -> None:
+    response = client.get(
+        "/api/v2/accounts/me",
+        headers={
+            "Authorization": (
+                f"Bearer {active_user['access_token']}"
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["email"] == active_user["email"]
+    assert data["is_active"] is True
+    assert data["is_verified"] is True
+
+
+def test_get_my_profile_rejects_missing_access_token(
+    client: TestClient,
+) -> None:
+    response = client.get("/api/v2/accounts/me")
+
+    assert response.status_code == 401
+
+
+def test_login_rejects_invalid_password(
+    client: TestClient,
+    active_user: dict[str, str],
+) -> None:
+    response = client.post(
+        "/api/v2/accounts/login",
+        json={
+            "email": active_user["email"],
+            "password": "WrongPassword1!",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid email or password."
+
+
+def test_refresh_rotates_refresh_token(
+    client: TestClient,
+    active_user: dict[str, str],
+) -> None:
+    old_refresh_token = active_user["refresh_token"]
+
+    response = client.post(
+        "/api/v2/accounts/refresh",
+        json={"refresh_token": old_refresh_token},
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["access_token"]
+    assert data["refresh_token"]
+    assert data["refresh_token"] != old_refresh_token
+
+    reused_token_response = client.post(
+        "/api/v2/accounts/refresh",
+        json={"refresh_token": old_refresh_token},
+    )
+
+    assert reused_token_response.status_code == 401
+    assert reused_token_response.json()["detail"] == (
+        "Refresh token has been revoked."
+    )
+
+
+def test_logout_revokes_refresh_token(
+    client: TestClient,
+    active_user: dict[str, str],
+) -> None:
+    refresh_token = active_user["refresh_token"]
+
+    logout_response = client.post(
+        "/api/v2/accounts/logout",
+        json={"refresh_token": refresh_token},
+    )
+
+    assert logout_response.status_code == 204
+
+    refresh_response = client.post(
+        "/api/v2/accounts/refresh",
+        json={"refresh_token": refresh_token},
+    )
+
+    assert refresh_response.status_code == 401
+    assert refresh_response.json()["detail"] == (
+        "Refresh token has been revoked."
+    )
 

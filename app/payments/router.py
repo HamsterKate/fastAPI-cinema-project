@@ -112,7 +112,7 @@ async def stripe_webhook_endpoint(
     if event["type"] == "checkout.session.completed":
         await mark_payment_succeeded(
             db,
-            dict(event["data"]["object"]),
+            event["data"]["object"].to_dict(),
         )
 
     return {"received": True}

@@ -42,7 +42,7 @@ services:
       - "127.0.0.1:8025:8025"
 
   minio:
-    image: quay.io/minio/minio:latest
+    image: alpine/minio:RELEASE.2025-10-15T17-29-55Z
     restart: unless-stopped
     user: "0:0"
     env_file:

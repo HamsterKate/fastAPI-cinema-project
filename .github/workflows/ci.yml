@@ -31,6 +31,9 @@ jobs:
       - name: Check migration consistency
         run: docker compose exec -T web alembic check
 
+      - name: Run tests with coverage
+        run: docker compose exec -T web pytest --cov=app --cov-report=term-missing
+
       - name: Show logs on failure
         if: failure()
         run: docker compose logs --no-color

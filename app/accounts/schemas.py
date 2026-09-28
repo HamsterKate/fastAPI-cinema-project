@@ -50,5 +50,6 @@ class TokenResponseSchema(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
 
+
 class ForgotPasswordSchema(BaseModel):
     email: NormalizedEmail

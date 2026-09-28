@@ -47,8 +47,7 @@ def get_token_from_email(
         recipients = item["Content"]["Headers"].get("To", [])
         subjects = item["Content"]["Headers"].get("Subject", [])
         decoded_subjects = [
-            str(make_header(decode_header(value)))
-            for value in subjects
+            str(make_header(decode_header(value))) for value in subjects
         ]
 
         if recipient not in recipients or subject not in decoded_subjects:
@@ -149,9 +148,7 @@ def moderator_headers(
                 UserModel(
                     id=user_id,
                     email=email,
-                    hashed_password=hash_password(
-                        "StrongPassword1!"
-                    ),
+                    hashed_password=hash_password("StrongPassword1!"),
                     is_active=True,
                     is_verified=True,
                     group_id=group.id,
@@ -161,17 +158,11 @@ def moderator_headers(
 
     async def delete_moderator() -> None:
         async with async_session_factory() as db:
-            await db.execute(
-                delete(UserModel).where(UserModel.id == user_id)
-            )
+            await db.execute(delete(UserModel).where(UserModel.id == user_id))
             await db.commit()
 
     client.portal.call(create_moderator)
 
-    yield {
-        "Authorization": (
-            f"Bearer {create_access_token(user_id)}"
-        )
-    }
+    yield {"Authorization": (f"Bearer {create_access_token(user_id)}")}
 
     client.portal.call(delete_moderator)

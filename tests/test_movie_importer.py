@@ -48,11 +48,14 @@ def test_calculate_movie_price(
     revenue: Decimal,
     expected_price: Decimal,
 ) -> None:
-    assert calculate_price(
-        release_date,
-        score,
-        revenue,
-    ) == expected_price
+    assert (
+        calculate_price(
+            release_date,
+            score,
+            revenue,
+        )
+        == expected_price
+    )
 
 
 def test_add_prices_writes_price_column(
@@ -60,8 +63,7 @@ def test_add_prices_writes_price_column(
 ) -> None:
     path = tmp_path / "movies.csv"
     path.write_text(
-        "names,date_x,score,revenue\n"
-        "Classic movie,2000-01-01,7.0,0\n",
+        "names,date_x,score,revenue\n" "Classic movie,2000-01-01,7.0,0\n",
         encoding="utf-8",
     )
 

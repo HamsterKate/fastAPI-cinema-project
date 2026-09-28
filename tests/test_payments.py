@@ -247,9 +247,7 @@ def test_payment_checkout_returns_conflict_for_non_pending_order(
     async def fake_create_checkout_session(
         **kwargs: object,
     ) -> object:
-        raise OrderCannotBePaidError(
-            "Only pending orders can be paid"
-        )
+        raise OrderCannotBePaidError("Only pending orders can be paid")
 
     monkeypatch.setattr(
         "app.payments.router.create_checkout_session",
@@ -299,5 +297,3 @@ async def test_checkout_rejects_non_pending_order(
             user_id=uuid4(),
             customer_email="user@example.com",
         )
-
-

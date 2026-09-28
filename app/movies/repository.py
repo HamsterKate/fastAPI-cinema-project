@@ -20,32 +20,26 @@ class MovieRepository:
         self.db = db
 
     async def list_movies(
-            self,
-            page: int,
-            per_page: int,
-            q: str | None = None,
-            genre: str | None = None,
-            country: str | None = None,
-            movie_status: MovieStatusEnum | None = None,
+        self,
+        page: int,
+        per_page: int,
+        q: str | None = None,
+        genre: str | None = None,
+        country: str | None = None,
+        movie_status: MovieStatusEnum | None = None,
     ) -> tuple[list[MovieModel], int]:
-        query = select(MovieModel).where(
-            MovieModel.deleted_at.is_(None)
-        )
+        query = select(MovieModel).where(MovieModel.deleted_at.is_(None))
 
         if q:
-            query = query.where(
-                MovieModel.name.icontains(q, autoescape=True)
-            )
+            query = query.where(MovieModel.name.icontains(q, autoescape=True))
 
         if genre:
-            query = (
-                query.join(MovieModel.genres)
-                .where(func.lower(GenreModel.name) == genre.lower())
+            query = query.join(MovieModel.genres).where(
+                func.lower(GenreModel.name) == genre.lower()
             )
         if country:
-            query = (
-                query.join(MovieModel.country)
-                .where(func.lower(CountryModel.code) == country.lower())
+            query = query.join(MovieModel.country).where(
+                func.lower(CountryModel.code) == country.lower()
             )
         if movie_status is not None:
             query = query.where(MovieModel.status == movie_status)
@@ -55,8 +49,7 @@ class MovieRepository:
         )
 
         statement = (
-            query
-            .order_by(MovieModel.date.desc(), MovieModel.id.desc())
+            query.order_by(MovieModel.date.desc(), MovieModel.id.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)
         )
@@ -82,9 +75,7 @@ class MovieRepository:
 
     async def get_or_create_country(self, code: str) -> CountryModel:
         result = await self.db.execute(
-            select(CountryModel).where(
-                func.lower(CountryModel.code) == code.lower()
-            )
+            select(CountryModel).where(func.lower(CountryModel.code) == code.lower())
         )
         country = result.scalar_one_or_none()
         if country is not None:
@@ -97,9 +88,7 @@ class MovieRepository:
 
     async def get_or_create_genre(self, name: str) -> GenreModel:
         result = await self.db.execute(
-            select(GenreModel).where(
-                func.lower(GenreModel.name) == name.lower()
-            )
+            select(GenreModel).where(func.lower(GenreModel.name) == name.lower())
         )
         genre = result.scalar_one_or_none()
         if genre is not None:
@@ -112,9 +101,7 @@ class MovieRepository:
 
     async def get_or_create_language(self, name: str) -> LanguageModel:
         result = await self.db.execute(
-            select(LanguageModel).where(
-                func.lower(LanguageModel.name) == name.lower()
-            )
+            select(LanguageModel).where(func.lower(LanguageModel.name) == name.lower())
         )
         language = result.scalar_one_or_none()
         if language is not None:

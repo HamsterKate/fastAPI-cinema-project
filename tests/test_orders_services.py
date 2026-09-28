@@ -13,7 +13,8 @@ from app.orders.services import (
     OrderCannotBeCanceledError,
     OrderNotFoundError,
     cancel_order,
-    checkout, PendingOrderConflictError,
+    checkout,
+    PendingOrderConflictError,
 )
 
 

@@ -32,10 +32,7 @@ def build_cart_response(cart) -> CartResponseSchema:
 
     return CartResponseSchema(
         id=cart.id,
-        items=[
-            CartItemResponseSchema.model_validate(item)
-            for item in items
-        ],
+        items=[CartItemResponseSchema.model_validate(item) for item in items],
         total_items=len(items),
         total_price=total_price,
     )
@@ -81,18 +78,14 @@ async def add_movie_to_cart(
 
     existing_item = await repository.get_item(cart.id, movie_id)
     if existing_item is not None:
-        raise CartItemAlreadyExistsError(
-            "Movie is already in the cart"
-        )
+        raise CartItemAlreadyExistsError("Movie is already in the cart")
 
     try:
         await repository.add_item(cart.id, movie_id)
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()
-        raise CartItemAlreadyExistsError(
-            "Movie is already in the cart"
-        ) from exc
+        raise CartItemAlreadyExistsError("Movie is already in the cart") from exc
 
     saved_cart = await repository.get_cart_by_user_id(user_id)
     assert saved_cart is not None

@@ -13,12 +13,8 @@ def test_build_pagination_links_preserves_filters() -> None:
         },
     )
 
-    assert prev_page == (
-        "/api/v2/movies?page=1&per_page=5&country=UA&genre=Drama"
-    )
-    assert next_page == (
-        "/api/v2/movies?page=3&per_page=5&country=UA&genre=Drama"
-    )
+    assert prev_page == ("/api/v2/movies?page=1&per_page=5&country=UA&genre=Drama")
+    assert next_page == ("/api/v2/movies?page=3&per_page=5&country=UA&genre=Drama")
     assert total_pages == 3
 
 

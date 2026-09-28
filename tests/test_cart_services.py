@@ -147,8 +147,8 @@ async def test_add_movie_to_cart_rejects_duplicate_item(
     )
 
     with pytest.raises(
-            CartItemAlreadyExistsError,
-            match="Movie is already in the cart",
+        CartItemAlreadyExistsError,
+        match="Movie is already in the cart",
     ):
         await add_movie_to_cart(
             SimpleNamespace(),

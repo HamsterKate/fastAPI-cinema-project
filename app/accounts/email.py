@@ -30,10 +30,7 @@ async def send_activation_email(
     recipient: str,
     token: str,
 ) -> None:
-    activation_link = (
-        f"{settings.activation_url}?"
-        f"{urlencode({'token': token})}"
-    )
+    activation_link = f"{settings.activation_url}?" f"{urlencode({'token': token})}"
 
     body = (
         "Welcome to Cinema 2.0!\n\n"
@@ -53,10 +50,7 @@ async def send_password_reset_email(
     recipient: str,
     token: str,
 ) -> None:
-    reset_link = (
-        f"{settings.password_reset_url}?"
-        f"{urlencode({'token': token})}"
-    )
+    reset_link = f"{settings.password_reset_url}?" f"{urlencode({'token': token})}"
 
     body = (
         "You requested a password reset for your Cinema 2.0 account.\n\n"

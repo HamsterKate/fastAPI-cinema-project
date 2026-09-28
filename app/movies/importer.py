@@ -77,9 +77,7 @@ async def pending_movie_rows(
     movies = load_movie_rows(path)
 
     async with async_session_factory() as db:
-        result = await db.execute(
-            select(func.lower(MovieModel.name), MovieModel.date)
-        )
+        result = await db.execute(select(func.lower(MovieModel.name), MovieModel.date))
         seen = set(result.all())
 
     pending = []

@@ -92,12 +92,8 @@ def test_build_pagination_links_preserves_filters() -> None:
         },
     )
 
-    assert previous_page == (
-        "/api/v2/movies?page=1&per_page=10&q=star+wars&country=UA"
-    )
-    assert next_page == (
-        "/api/v2/movies?page=3&per_page=10&q=star+wars&country=UA"
-    )
+    assert previous_page == ("/api/v2/movies?page=1&per_page=10&q=star+wars&country=UA")
+    assert next_page == ("/api/v2/movies?page=3&per_page=10&q=star+wars&country=UA")
     assert total_pages == 3
 
 
@@ -225,11 +221,7 @@ def test_create_movie_requires_moderator_or_admin(
 ) -> None:
     response = client.post(
         "/api/v2/movies",
-        headers={
-            "Authorization": (
-                f"Bearer {active_user['access_token']}"
-            )
-        },
+        headers={"Authorization": (f"Bearer {active_user['access_token']}")},
         json={
             "name": "Test movie",
             "date": "2025-01-01",
@@ -339,5 +331,3 @@ def test_moderator_can_soft_delete_movie(
     )
 
     assert detail_response.status_code == 404
-
-

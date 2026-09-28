@@ -5,15 +5,15 @@ Revises: 191967e25547
 Create Date: 2026-09-27 11:04:17.551122
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
-revision: str = 'd82d7938418d'
-down_revision: Union[str, Sequence[str], None] = '191967e25547'
+revision: str = "d82d7938418d"
+down_revision: Union[str, Sequence[str], None] = "191967e25547"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,8 +28,7 @@ def upgrade() -> None:
         ),
     )
 
-    op.execute(
-        """
+    op.execute("""
         UPDATE movies
         SET price = LEAST(
             9.99::numeric,
@@ -56,8 +55,7 @@ def upgrade() -> None:
                 ELSE 0.00::numeric
             END
         )
-        """
-    )
+        """)
 
     op.alter_column(
         "movies",
@@ -78,4 +76,3 @@ def downgrade() -> None:
         type_="check",
     )
     op.drop_column("movies", "price")
-

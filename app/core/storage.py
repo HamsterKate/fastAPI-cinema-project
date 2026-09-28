@@ -7,7 +7,6 @@ from botocore.config import Config
 
 from app.core.config import settings
 
-
 _session = aioboto3.Session()
 
 

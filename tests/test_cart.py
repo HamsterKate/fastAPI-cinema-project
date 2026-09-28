@@ -38,11 +38,7 @@ def test_user_can_add_duplicate_and_remove_cart_item(
     active_user: dict[str, str],
     moderator_headers: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
     movie_id = create_test_movie(client, moderator_headers)
 
     empty_cart_response = client.get(
@@ -70,9 +66,7 @@ def test_user_can_add_duplicate_and_remove_cart_item(
     )
 
     assert duplicate_response.status_code == 409
-    assert duplicate_response.json()["detail"] == (
-        "Movie is already in the cart"
-    )
+    assert duplicate_response.json()["detail"] == ("Movie is already in the cart")
 
     remove_response = client.delete(
         f"/api/v2/cart/items/{movie_id}",
@@ -88,11 +82,7 @@ def test_clear_cart_removes_all_items(
     active_user: dict[str, str],
     moderator_headers: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
     movie_id = create_test_movie(client, moderator_headers)
 
     add_response = client.post(
@@ -117,11 +107,7 @@ def test_cart_rejects_missing_movie(
 ) -> None:
     response = client.post(
         f"/api/v2/cart/items/{uuid4()}",
-        headers={
-            "Authorization": (
-                f"Bearer {active_user['access_token']}"
-            )
-        },
+        headers={"Authorization": (f"Bearer {active_user['access_token']}")},
     )
 
     assert response.status_code == 404

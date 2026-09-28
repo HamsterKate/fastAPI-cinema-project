@@ -15,9 +15,7 @@ class ProfileRepository:
         user_id: UUID,
     ) -> UserProfileModel | None:
         result = await self.db.execute(
-            select(UserProfileModel).where(
-                UserProfileModel.user_id == user_id
-            )
+            select(UserProfileModel).where(UserProfileModel.user_id == user_id)
         )
         return result.scalar_one_or_none()
 

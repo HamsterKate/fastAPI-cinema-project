@@ -54,11 +54,11 @@ async def remove_favorite(
 
 
 async def get_favorites_page(
-        db: AsyncSession,
-        user_id: UUID,
-        page: int,
-        per_page: int,
-        path: str,
+    db: AsyncSession,
+    user_id: UUID,
+    page: int,
+    per_page: int,
+    path: str,
 ) -> MovieListResponseSchema:
     repository = FavoriteRepository(db)
     movies, total_items = await repository.list_movies(user_id, page, per_page)

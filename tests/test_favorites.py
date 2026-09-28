@@ -38,11 +38,7 @@ def test_user_can_add_list_and_remove_favorite(
     active_user: dict[str, str],
     moderator_headers: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
     movie_id = create_test_movie(client, moderator_headers)
 
     empty_list_response = client.get(
@@ -59,9 +55,7 @@ def test_user_can_add_list_and_remove_favorite(
     )
 
     assert add_response.status_code == 201
-    assert add_response.json() == {
-        "message": "Movie added to favorites"
-    }
+    assert add_response.json() == {"message": "Movie added to favorites"}
 
     duplicate_response = client.post(
         f"/api/v2/favorites/{movie_id}",
@@ -69,9 +63,7 @@ def test_user_can_add_list_and_remove_favorite(
     )
 
     assert duplicate_response.status_code == 409
-    assert duplicate_response.json()["detail"] == (
-        "Movie is already in favorites"
-    )
+    assert duplicate_response.json()["detail"] == ("Movie is already in favorites")
 
     list_response = client.get(
         "/api/v2/favorites",
@@ -104,11 +96,7 @@ def test_favorites_reject_missing_movie(
 ) -> None:
     response = client.post(
         f"/api/v2/favorites/{uuid4()}",
-        headers={
-            "Authorization": (
-                f"Bearer {active_user['access_token']}"
-            )
-        },
+        headers={"Authorization": (f"Bearer {active_user['access_token']}")},
     )
 
     assert response.status_code == 404
@@ -129,14 +117,8 @@ def test_remove_missing_favorite_returns_not_found(
 ) -> None:
     response = client.delete(
         f"/api/v2/favorites/{uuid4()}",
-        headers={
-            "Authorization": (
-                f"Bearer {active_user['access_token']}"
-            )
-        },
+        headers={"Authorization": (f"Bearer {active_user['access_token']}")},
     )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Favorite not found"
-
-

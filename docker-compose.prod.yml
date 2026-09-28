@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+      minio_init:
+        condition: service_completed_successfully
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+
+  minio:
+    image: alpine/minio:RELEASE.2025-10-15T17-29-55Z
+    restart: unless-stopped
+    user: "0:0"
+    env_file:
+      - .env
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://localhost:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio_init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      minio:
+        condition: service_healthy
+    command: python -m app.core.minio_setup
+
+volumes:
+  postgres_data:
+  minio_data:

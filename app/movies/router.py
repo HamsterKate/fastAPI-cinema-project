@@ -22,7 +22,8 @@ from app.movies.services import (
     get_movies_page,
     get_movie_detail,
     update_movie,
-    MovieNotFoundError, delete_movie,
+    MovieNotFoundError,
+    delete_movie,
 )
 from app.movies.validators import normalize_country_code, is_valid_country_code
 
@@ -34,23 +35,19 @@ router = APIRouter(prefix="/movies", tags=["movies"])
     response_model=MovieListResponseSchema,
 )
 async def list_movies_endpoint(
-        request: Request,
-        page: int = Query(default=1, ge=1),
-        per_page: int = Query(default=10, ge=1, le=20),
-        q: str | None = Query(default=None, max_length=100),
-        genre: str | None = Query(default=None, max_length=255),
-        country: str | None = Query(default=None, max_length=20),
-        movie_status: MovieStatusEnum | None = Query(
-                default=None,
-                alias="status",
-            ),
-        db: AsyncSession = Depends(get_db),
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=10, ge=1, le=20),
+    q: str | None = Query(default=None, max_length=100),
+    genre: str | None = Query(default=None, max_length=255),
+    country: str | None = Query(default=None, max_length=20),
+    movie_status: MovieStatusEnum | None = Query(
+        default=None,
+        alias="status",
+    ),
+    db: AsyncSession = Depends(get_db),
 ) -> MovieListResponseSchema:
-    country = (
-        normalize_country_code(country)
-        if country is not None
-        else None
-    )
+    country = normalize_country_code(country) if country is not None else None
 
     if country and not is_valid_country_code(country):
         raise HTTPException(
@@ -125,12 +122,12 @@ async def get_movie_detail_endpoint(
     response_model=MovieDetailSchema,
 )
 async def update_movie_endpoint(
-        movie_id: UUID,
-        data: MovieUpdateRequestSchema,
-        db: AsyncSession = Depends(get_db),
-        _current_user: UserModel = Depends(
-            require_roles(UserGroupEnum.MODERATOR, UserGroupEnum.ADMIN)
-        ),
+    movie_id: UUID,
+    data: MovieUpdateRequestSchema,
+    db: AsyncSession = Depends(get_db),
+    _current_user: UserModel = Depends(
+        require_roles(UserGroupEnum.MODERATOR, UserGroupEnum.ADMIN)
+    ),
 ) -> MovieDetailSchema:
     try:
         movie = await update_movie(db, movie_id, data)

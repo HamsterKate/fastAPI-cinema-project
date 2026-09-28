@@ -33,8 +33,8 @@ from app.core.config import settings
 
 
 async def create_activation_token(
-        db: AsyncSession,
-        user: UserModel,
+    db: AsyncSession,
+    user: UserModel,
 ) -> str:
     token = generate_token()
 
@@ -42,8 +42,8 @@ async def create_activation_token(
         user_id=user.id,
         token_hash=hash_token(token),
         expires_at=(
-                datetime.now(timezone.utc)
-                + timedelta(minutes=settings.activation_token_expire_minutes)
+            datetime.now(timezone.utc)
+            + timedelta(minutes=settings.activation_token_expire_minutes)
         ),
     )
 
@@ -54,8 +54,8 @@ async def create_activation_token(
 
 
 async def register_user(
-        db: AsyncSession,
-        user_data: UserRegistrationSchema,
+    db: AsyncSession,
+    user_data: UserRegistrationSchema,
 ) -> UserModel:
     result = await db.execute(
         select(UserModel).where(UserModel.email == user_data.email)
@@ -66,9 +66,7 @@ async def register_user(
         raise ValueError("User with this email already exists.")
 
     result = await db.execute(
-        select(UserGroupModel).where(
-            UserGroupModel.name == UserGroupEnum.USER
-        )
+        select(UserGroupModel).where(UserGroupModel.name == UserGroupEnum.USER)
     )
     user_group = result.scalar_one_or_none()
 
@@ -100,8 +98,8 @@ async def register_user(
 
 
 async def activate_user(
-        db: AsyncSession,
-        token: str,
+    db: AsyncSession,
+    token: str,
 ) -> UserModel:
     token_hash = hash_token(token)
 
@@ -119,9 +117,7 @@ async def activate_user(
         raise ValueError("Activation token has expired.")
 
     result = await db.execute(
-        select(UserModel).where(
-            UserModel.id == activation.user_id
-        )
+        select(UserModel).where(UserModel.id == activation.user_id)
     )
     user = result.scalar_one_or_none()
 
@@ -139,21 +135,17 @@ async def activate_user(
 
 
 async def resend_activation(
-        db: AsyncSession,
-        email: str,
+    db: AsyncSession,
+    email: str,
 ) -> None:
-    result = await db.execute(
-        select(UserModel).where(UserModel.email == email)
-    )
+    result = await db.execute(select(UserModel).where(UserModel.email == email))
     user = result.scalar_one_or_none()
 
     if user is None or user.is_active:
         return
 
     result = await db.execute(
-        select(ActivationTokenModel).where(
-            ActivationTokenModel.user_id == user.id
-        )
+        select(ActivationTokenModel).where(ActivationTokenModel.user_id == user.id)
     )
     existing_token = result.scalar_one_or_none()
 
@@ -172,8 +164,8 @@ async def resend_activation(
 
 
 async def login_user(
-        db: AsyncSession,
-        user_data: UserLoginSchema,
+    db: AsyncSession,
+    user_data: UserLoginSchema,
 ) -> TokenResponseSchema:
     result = await db.execute(
         select(UserModel).where(UserModel.email == user_data.email)
@@ -216,8 +208,8 @@ async def login_user(
 
 
 async def revoke_token_chain(
-        db: AsyncSession,
-        token: RefreshTokenModel,
+    db: AsyncSession,
+    token: RefreshTokenModel,
 ) -> None:
     revoked_at = datetime.now(timezone.utc)
     current_token = token
@@ -232,14 +224,14 @@ async def revoke_token_chain(
         result = await db.execute(
             select(RefreshTokenModel)
             .where(
-                RefreshTokenModel.id
-                == current_token.replaced_by_token_id,
+                RefreshTokenModel.id == current_token.replaced_by_token_id,
                 RefreshTokenModel.user_id == token.user_id,
             )
             .with_for_update()
         )
 
         current_token = result.scalar_one_or_none()
+
 
 async def refresh_user_tokens(
     db: AsyncSession,
@@ -348,9 +340,7 @@ async def forgot_password(
     db: AsyncSession,
     email: str,
 ) -> None:
-    result = await db.execute(
-        select(UserModel).where(UserModel.email == email)
-    )
+    result = await db.execute(select(UserModel).where(UserModel.email == email))
     user = result.scalar_one_or_none()
 
     if user is None or not user.is_active or not user.is_verified:
@@ -374,9 +364,7 @@ async def forgot_password(
         token_hash=hash_token(token),
         expires_at=(
             datetime.now(timezone.utc)
-            + timedelta(
-                minutes=settings.password_reset_token_expire_minutes
-            )
+            + timedelta(minutes=settings.password_reset_token_expire_minutes)
         ),
     )
 
@@ -396,9 +384,7 @@ async def reset_password(
 ) -> None:
     result = await db.execute(
         select(PasswordResetTokenModel)
-        .where(
-            PasswordResetTokenModel.token_hash == hash_token(token)
-        )
+        .where(PasswordResetTokenModel.token_hash == hash_token(token))
         .with_for_update()
     )
     reset_token = result.scalar_one_or_none()
@@ -410,9 +396,7 @@ async def reset_password(
         raise ValueError("Invalid or expired password reset token.")
 
     result = await db.execute(
-        select(UserModel)
-        .where(UserModel.id == reset_token.user_id)
-        .with_for_update()
+        select(UserModel).where(UserModel.id == reset_token.user_id).with_for_update()
     )
     user = result.scalar_one_or_none()
 

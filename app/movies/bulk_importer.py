@@ -18,8 +18,9 @@ from app.movies.models import (
 )
 from app.movies.validators import normalize_genre_name
 
-
-ReferenceModel = type[ActorModel] | type[CountryModel] | type[GenreModel] | type[LanguageModel]
+ReferenceModel = (
+    type[ActorModel] | type[CountryModel] | type[GenreModel] | type[LanguageModel]
+)
 
 
 async def ensure_reference_ids(
@@ -41,14 +42,10 @@ async def ensure_reference_ids(
                 )
             ids[key] = record_id
 
-    missing = [
-        (key, value)
-        for key, value in names.items()
-        if key not in ids
-    ]
+    missing = [(key, value) for key, value in names.items() if key not in ids]
 
     for start in range(0, len(missing), 1000):
-        batch = missing[start:start + 1000]
+        batch = missing[start : start + 1000]
         rows = []
 
         for key, value in batch:
@@ -66,8 +63,8 @@ async def import_full_catalog(path: Path) -> tuple[int, int]:
     if not movies:
         return 0, skipped
 
-    country_names, genre_names, actor_names, language_names = (
-        collect_reference_names(movies)
+    country_names, genre_names, actor_names, language_names = collect_reference_names(
+        movies
     )
 
     async with async_session_factory() as db:
@@ -75,12 +72,8 @@ async def import_full_catalog(path: Path) -> tuple[int, int]:
             countries = await ensure_reference_ids(
                 db, CountryModel, "code", country_names
             )
-            genres = await ensure_reference_ids(
-                db, GenreModel, "name", genre_names
-            )
-            actors = await ensure_reference_ids(
-                db, ActorModel, "name", actor_names
-            )
+            genres = await ensure_reference_ids(db, GenreModel, "name", genre_names)
+            actors = await ensure_reference_ids(db, ActorModel, "name", actor_names)
             languages = await ensure_reference_ids(
                 db, LanguageModel, "name", language_names
             )
@@ -95,20 +88,23 @@ async def import_full_catalog(path: Path) -> tuple[int, int]:
                 row = movie.model_dump(
                     exclude={"country", "genres", "actors", "languages"}
                 )
-                row.update({
-                    "id": movie_id,
-                    "country_id": countries[movie.country.lower()],
-                })
+                row.update(
+                    {
+                        "id": movie_id,
+                        "country_id": countries[movie.country.lower()],
+                    }
+                )
                 movie_rows.append(row)
 
                 for name in {
-                    normalize_genre_name(value).lower()
-                    for value in movie.genres
+                    normalize_genre_name(value).lower() for value in movie.genres
                 }:
-                    genre_links.append({
-                        "movie_id": movie_id,
-                        "genre_id": genres[name],
-                    })
+                    genre_links.append(
+                        {
+                            "movie_id": movie_id,
+                            "genre_id": genres[name],
+                        }
+                    )
 
                 movie_actor_ids = set()
 
@@ -121,16 +117,20 @@ async def import_full_catalog(path: Path) -> tuple[int, int]:
                         continue
 
                     movie_actor_ids.add(actor_id)
-                    actor_links.append({
-                        "movie_id": movie_id,
-                        "actor_id": actor_id,
-                    })
+                    actor_links.append(
+                        {
+                            "movie_id": movie_id,
+                            "actor_id": actor_id,
+                        }
+                    )
 
                 for name in {value.lower() for value in movie.languages}:
-                    language_links.append({
-                        "movie_id": movie_id,
-                        "language_id": languages[name],
-                    })
+                    language_links.append(
+                        {
+                            "movie_id": movie_id,
+                            "language_id": languages[name],
+                        }
+                    )
 
             for table, rows in (
                 (MovieModel, movie_rows),
@@ -141,7 +141,7 @@ async def import_full_catalog(path: Path) -> tuple[int, int]:
                 for start in range(0, len(rows), 1000):
                     await db.execute(
                         insert(table),
-                        rows[start:start + 1000],
+                        rows[start : start + 1000],
                     )
 
     return len(movies), skipped

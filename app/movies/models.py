@@ -21,7 +21,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.cart.models import CartItemModel
 from app.db.models.base import Base
+from app.orders.models import OrderItemModel
 
 
 class MovieStatusEnum(StrEnum):
@@ -99,9 +101,7 @@ class GenreModel(Base):
         back_populates="genres",
     )
 
-    __table_args__ = (
-        Index("uq_genres_name_lower", func.lower(name), unique=True),
-    )
+    __table_args__ = (Index("uq_genres_name_lower", func.lower(name), unique=True),)
 
 
 class ActorModel(Base):
@@ -121,9 +121,7 @@ class ActorModel(Base):
         back_populates="actors",
     )
 
-    __table_args__ = (
-        Index("ix_actors_name_lower", func.lower(name)),
-    )
+    __table_args__ = (Index("ix_actors_name_lower", func.lower(name)),)
 
 
 class CountryModel(Base):
@@ -146,9 +144,8 @@ class CountryModel(Base):
         back_populates="country",
     )
 
-    __table_args__ = (
-        Index("uq_countries_code_lower", func.lower(code), unique=True),
-    )
+    __table_args__ = (Index("uq_countries_code_lower", func.lower(code), unique=True),)
+
 
 class LanguageModel(Base):
     __tablename__ = "languages"
@@ -167,9 +164,7 @@ class LanguageModel(Base):
         back_populates="languages",
     )
 
-    __table_args__ = (
-        Index("uq_languages_name_lower", func.lower(name), unique=True),
-    )
+    __table_args__ = (Index("uq_languages_name_lower", func.lower(name), unique=True),)
 
 
 class MovieModel(Base):
@@ -195,6 +190,10 @@ class MovieModel(Base):
     )
     budget: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     revenue: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
+    price: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2),
+        nullable=False,
+    )
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -217,6 +216,14 @@ class MovieModel(Base):
         secondary=movies_languages,
         back_populates="movies",
     )
+    cart_items: Mapped[list["CartItemModel"]] = relationship(
+        back_populates="movie",
+        passive_deletes=True,
+    )
+    order_items: Mapped[list["OrderItemModel"]] = relationship(
+        back_populates="movie",
+        passive_deletes=True,
+    )
 
     __table_args__ = (
         Index(
@@ -229,5 +236,5 @@ class MovieModel(Base):
         CheckConstraint("score >= 0 AND score <= 100", name="score_range"),
         CheckConstraint("budget >= 0", name="budget_non_negative"),
         CheckConstraint("revenue >= 0", name="revenue_non_negative"),
+        CheckConstraint("price >= 0", name="price_non_negative"),
     )
-

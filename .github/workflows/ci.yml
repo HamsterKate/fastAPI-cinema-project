@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  docker-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create CI environment file
+        run: cp .env.sample .env
+
+      - name: Build and start services
+        run: docker compose up -d --build
+
+      - name: Show service status
+        run: docker compose ps
+
+      - name: Check Python compilation
+        run: docker compose exec -T web python -m compileall app main.py
+
+      - name: Check code formatting
+        run: docker compose exec -T web black --check app tests main.py
+
+      - name: Apply database migrations
+        run: docker compose exec -T web alembic upgrade head
+
+      - name: Check migration consistency
+        run: docker compose exec -T web alembic check
+
+      - name: Run tests with coverage
+        run: docker compose exec -T web pytest --cov=app --cov-report=term-missing
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v

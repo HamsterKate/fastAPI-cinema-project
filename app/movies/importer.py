@@ -3,6 +3,8 @@ from pathlib import Path
 
 from sqlalchemy import func, select
 
+from app.accounts import models as _accounts_models
+from app.cart import models as _cart_models
 from app.db.database import async_session_factory
 from app.movies.models import MovieModel
 from app.movies.services import create_movie
@@ -27,6 +29,7 @@ def load_movie_rows(path: Path) -> list[MovieCreateRequestSchema]:
                         "status": row["status"],
                         "budget": row["budget_x"],
                         "revenue": row["revenue"],
+                        "price": row["price"],
                         "country": row["country"],
                         "genres": row["genre"].split(","),
                         "actors": [
@@ -74,9 +77,7 @@ async def pending_movie_rows(
     movies = load_movie_rows(path)
 
     async with async_session_factory() as db:
-        result = await db.execute(
-            select(func.lower(MovieModel.name), MovieModel.date)
-        )
+        result = await db.execute(select(func.lower(MovieModel.name), MovieModel.date))
         seen = set(result.all())
 
     pending = []

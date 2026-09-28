@@ -40,6 +40,7 @@ class MovieListItemSchema(CatalogReadSchema):
     date: Date
     score: float
     overview: str
+    price: Decimal
 
 
 class MovieDetailSchema(MovieListItemSchema):
@@ -68,6 +69,7 @@ class MovieCreateResponseSchema(BaseModel):
                     "status": "Released",
                     "budget": "100.00",
                     "revenue": "200.00",
+                    "price": "9.99",
                     "country": {
                         "id": "22222222-2222-4222-8222-222222222222",
                         "code": "USA",
@@ -92,9 +94,7 @@ class MovieCreateResponseSchema(BaseModel):
                         }
                     ],
                 },
-                "messages": [
-                    "Genre 'DRAMA' was saved as 'Drama'."
-                ],
+                "messages": ["Genre 'DRAMA' was saved as 'Drama'."],
             }
         }
     )
@@ -126,6 +126,7 @@ class MovieCreateRequestSchema(BaseModel):
     status: MovieStatusEnum
     budget: Decimal = Field(ge=0, max_digits=15, decimal_places=2)
     revenue: Decimal = Field(ge=0, max_digits=15, decimal_places=2)
+    price: Decimal = Field(ge=0, max_digits=6, decimal_places=2)
     country: str = Field(min_length=2, max_length=3)
     genres: list[str]
     actors: list[ActorReferenceSchema]
@@ -185,6 +186,7 @@ class MovieCreateRequestSchema(BaseModel):
                 "status": "Released",
                 "budget": "100.00",
                 "revenue": "200.00",
+                "price": "9.99",
                 "country": "US",
                 "genres": ["DRAMA", "Non-Fiction"],
                 "actors": [{"name": "Example Actor"}],
@@ -200,11 +202,13 @@ class MovieUpdateRequestSchema(BaseModel):
     score: float | None = Field(default=None, ge=0, le=100)
     overview: str | None = Field(default=None, min_length=1)
     status: MovieStatusEnum | None = None
-    budget: Decimal | None = Field(
-        default=None, ge=0, max_digits=15, decimal_places=2
-    )
-    revenue: Decimal | None = Field(
-        default=None, ge=0, max_digits=15, decimal_places=2
+    budget: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
+    revenue: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
+    price: Decimal | None = Field(
+        default=None,
+        ge=0,
+        max_digits=6,
+        decimal_places=2,
     )
 
     @field_validator("name", "overview", mode="before")

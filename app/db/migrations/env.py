@@ -4,11 +4,14 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from app.accounts import models
+from app.cart import models as cart_models
 from app.core.config import settings
 from app.db.models.base import Base
-from app.accounts import models
+from app.favorites import models as favorites_models
 from app.movies import models as movies_models
-
+from app.orders import models as orders_models
+from app.payments import models as payments_models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

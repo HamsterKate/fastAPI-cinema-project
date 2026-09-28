@@ -16,7 +16,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
+from app.cart.models import CartModel
 from app.db.models.base import Base
+from app.orders.models import OrderModel
 
 
 class UserGroupEnum(StrEnum):
@@ -128,6 +130,16 @@ class UserModel(Base):
     refresh_tokens: Mapped[list["RefreshTokenModel"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    cart: Mapped["CartModel | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    orders: Mapped[list["OrderModel"]] = relationship(
+        back_populates="user",
         passive_deletes=True,
     )
 

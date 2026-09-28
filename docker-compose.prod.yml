@@ -1,22 +1,27 @@
 services:
   db:
     image: postgres:17
-    container_name: cinema_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: cinema
-      POSTGRES_USER: cinema
-      POSTGRES_PASSWORD: cinema
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cinema_web
     restart: unless-stopped
     env_file:
       - .env
@@ -24,24 +29,20 @@ services:
       - "8000:8000"
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
       mailhog:
         condition: service_started
       minio_init:
         condition: service_completed_successfully
-    volumes:
-      - .:/app
 
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: cinema_mailhog
     restart: unless-stopped
     ports:
       - "127.0.0.1:8025:8025"
 
   minio:
     image: alpine/minio:RELEASE.2025-10-15T17-29-55Z
-    container_name: cinema_minio
     restart: unless-stopped
     user: "0:0"
     env_file:
@@ -49,7 +50,7 @@ services:
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -62,7 +63,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cinema_minio_init
     env_file:
       - .env
     depends_on:

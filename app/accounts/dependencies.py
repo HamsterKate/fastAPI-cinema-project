@@ -11,14 +11,11 @@ from app.accounts.jwt import decode_token
 from app.accounts.models import UserModel, UserGroupEnum
 from app.db.session import get_db
 
-
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(
-        bearer_scheme
-    ),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> UserModel:
     authentication_error = HTTPException(

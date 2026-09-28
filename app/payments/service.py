@@ -1,9 +1,11 @@
 import asyncio
+
+import pytest
 import stripe
 
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,7 +67,7 @@ async def create_checkout_session(
         raise OrderNotFoundForPaymentError("Order not found")
 
     if order.status is not OrderStatusEnum.PENDING:
-        raise OrderNotFoundForPaymentError("Only pending orders can be paid")
+        raise OrderCannotBePaidError("Only pending orders can be paid")
 
     stripe_client = stripe.StripeClient(settings.stripe_secret_key)
 
@@ -99,9 +101,7 @@ async def create_checkout_session(
             },
         )
     except stripe.StripeError as error:
-        raise StripeCheckoutError(
-            "Could not create Stripe Checkout session"
-        ) from error
+        raise StripeCheckoutError("Could not create Stripe Checkout session") from error
 
     if checkout_session.url is None:
         raise StripeCheckoutError("Stripe did not return a checkout URL")
@@ -136,9 +136,7 @@ async def mark_payment_succeeded(
     checkout_session_id = str(checkout_session["id"])
 
     repository = PaymentRepository(db)
-    payment = await repository.get_by_checkout_session_id(
-        checkout_session_id
-    )
+    payment = await repository.get_by_checkout_session_id(checkout_session_id)
 
     if payment is None:
         return

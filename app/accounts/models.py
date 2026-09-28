@@ -119,9 +119,7 @@ class UserModel(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-    password_reset_token: Mapped[
-        "PasswordResetTokenModel | None"
-    ] = relationship(
+    password_reset_token: Mapped["PasswordResetTokenModel | None"] = relationship(
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",

@@ -35,9 +35,7 @@ class FavoriteRepository:
         statement = (
             insert(FavoriteMovieModel)
             .values(user_id=user_id, movie_id=movie_id)
-            .on_conflict_do_nothing(
-                index_elements=["user_id", "movie_id"]
-            )
+            .on_conflict_do_nothing(index_elements=["user_id", "movie_id"])
             .returning(FavoriteMovieModel.movie_id)
         )
         inserted_movie_id = await self.db.scalar(statement)
@@ -70,8 +68,7 @@ class FavoriteRepository:
         )
 
         result = await self.db.execute(
-            query
-            .order_by(
+            query.order_by(
                 FavoriteMovieModel.created_at.desc(),
                 MovieModel.id.desc(),
             )
@@ -80,5 +77,3 @@ class FavoriteRepository:
         )
 
         return list(result.scalars().all()), total_items or 0
-
-

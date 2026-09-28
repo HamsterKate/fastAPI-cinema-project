@@ -21,17 +21,14 @@ class OrderRepository:
         page: int,
         per_page: int,
     ) -> tuple[list[OrderModel], int]:
-        query = select(OrderModel).where(
-            OrderModel.user_id == user_id
-        )
+        query = select(OrderModel).where(OrderModel.user_id == user_id)
 
         total_items = await self.db.scalar(
             select(func.count()).select_from(query.subquery())
         )
 
         statement = (
-            query
-            .order_by(OrderModel.created_at.desc(), OrderModel.id.desc())
+            query.order_by(OrderModel.created_at.desc(), OrderModel.id.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)
         )
@@ -102,4 +99,3 @@ class OrderRepository:
         order.status = status
         await self.db.flush()
         return order
-    

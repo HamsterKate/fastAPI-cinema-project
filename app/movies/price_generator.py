@@ -4,7 +4,6 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-
 BASE_PRICE = Decimal("4.99")
 MAX_PRICE = Decimal("9.99")
 

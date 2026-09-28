@@ -8,7 +8,6 @@ from fastapi import HTTPException, UploadFile, status
 from app.core.config import settings
 from app.core.storage import get_s3_client
 
-
 logger = logging.getLogger(__name__)
 
 ALLOWED_AVATAR_CONTENT_TYPES = {

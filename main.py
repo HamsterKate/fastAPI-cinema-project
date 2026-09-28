@@ -10,7 +10,6 @@ from app.profiles.router import router as profiles_router
 from app.movies.router import router as movies_router
 from app.favorites.router import router as favorites_router
 
-
 app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
@@ -41,10 +40,7 @@ app.include_router(
     prefix=settings.api_prefix,
 )
 
-app.include_router(
-    payments_router,
-    prefix=settings.api_prefix
-)
+app.include_router(payments_router, prefix=settings.api_prefix)
 
 app.include_router(
     favorites_router,

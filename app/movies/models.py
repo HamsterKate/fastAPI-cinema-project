@@ -21,7 +21,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.cart.models import CartItemModel
 from app.db.models.base import Base
+from app.orders.models import OrderItemModel
 
 
 class MovieStatusEnum(StrEnum):
@@ -195,6 +197,10 @@ class MovieModel(Base):
     )
     budget: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     revenue: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
+    price: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2),
+        nullable=False,
+    )
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -217,6 +223,14 @@ class MovieModel(Base):
         secondary=movies_languages,
         back_populates="movies",
     )
+    cart_items: Mapped[list["CartItemModel"]] = relationship(
+        back_populates="movie",
+        passive_deletes=True,
+    )
+    order_items: Mapped[list["OrderItemModel"]] = relationship(
+        back_populates="movie",
+        passive_deletes=True,
+    )
 
     __table_args__ = (
         Index(
@@ -229,5 +243,6 @@ class MovieModel(Base):
         CheckConstraint("score >= 0 AND score <= 100", name="score_range"),
         CheckConstraint("budget >= 0", name="budget_non_negative"),
         CheckConstraint("revenue >= 0", name="revenue_non_negative"),
+        CheckConstraint("price >= 0", name="price_non_negative"),
     )
 

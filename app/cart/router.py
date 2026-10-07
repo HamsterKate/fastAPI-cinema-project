@@ -17,7 +17,6 @@ from app.cart.services import (
 )
 from app.db.session import get_db
 
-
 router = APIRouter(
     prefix="/cart",
     tags=["cart"],

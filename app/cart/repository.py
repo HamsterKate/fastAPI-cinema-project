@@ -77,9 +77,6 @@ class CartRepository:
 
     async def clear_items(self, cart_id: UUID) -> None:
         await self.db.execute(
-            delete(CartItemModel).where(
-                CartItemModel.cart_id == cart_id
-            )
+            delete(CartItemModel).where(CartItemModel.cart_id == cart_id)
         )
         await self.db.flush()
-        

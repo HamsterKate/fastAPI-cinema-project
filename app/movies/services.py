@@ -6,7 +6,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import build_pagination_links
-from app.movies.models import ActorModel, GenreModel, LanguageModel, MovieModel, MovieStatusEnum
+from app.movies.models import (
+    ActorModel,
+    GenreModel,
+    LanguageModel,
+    MovieModel,
+    MovieStatusEnum,
+)
 from app.movies.validators import normalize_genre_name, normalize_country_code
 from app.movies.repository import MovieRepository
 from app.movies.schemas import (
@@ -26,9 +32,7 @@ class ActorNotFoundError(Exception):
 class AmbiguousActorError(Exception):
     def __init__(self, name: str) -> None:
         self.name = name
-        super().__init__(
-            f"Multiple actors named '{name}' exist; provide an actor ID"
-        )
+        super().__init__(f"Multiple actors named '{name}' exist; provide an actor ID")
 
 
 async def resolve_actors(
@@ -52,9 +56,7 @@ async def resolve_actors(
                 raise AmbiguousActorError(reference.name)
 
             actor = (
-                matches[0]
-                if matches
-                else await repository.create_actor(reference.name)
+                matches[0] if matches else await repository.create_actor(reference.name)
             )
 
         if actor.id not in seen_ids:
@@ -77,9 +79,7 @@ async def resolve_genres(
         genre = await repository.get_or_create_genre(canonical_name)
 
         if original_name != genre.name:
-            message = (
-                f"Genre '{original_name}' was saved as '{genre.name}'."
-            )
+            message = f"Genre '{original_name}' was saved as '{genre.name}'."
             if message not in messages:
                 messages.append(message)
 
@@ -153,14 +153,14 @@ async def create_movie(
 
 
 async def get_movies_page(
-        db: AsyncSession,
-        page: int,
-        per_page: int,
-        path: str,
-        q: str | None = None,
-        genre: str | None = None,
-        country: str | None = None,
-        movie_status: MovieStatusEnum | None = None,
+    db: AsyncSession,
+    page: int,
+    per_page: int,
+    path: str,
+    q: str | None = None,
+    genre: str | None = None,
+    country: str | None = None,
+    movie_status: MovieStatusEnum | None = None,
 ) -> MovieListResponseSchema:
     q = (q or "").strip() or None
 
@@ -221,9 +221,9 @@ class MovieNotFoundError(Exception):
 
 
 async def update_movie(
-        db: AsyncSession,
-        movie_id: UUID,
-        data: MovieUpdateRequestSchema,
+    db: AsyncSession,
+    movie_id: UUID,
+    data: MovieUpdateRequestSchema,
 ) -> MovieModel:
     repository = MovieRepository(db)
     movie = await repository.get_by_id(movie_id)
@@ -237,9 +237,7 @@ async def update_movie(
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()
-        raise CatalogConflictError(
-            "Movie conflicts with an existing record"
-        ) from exc
+        raise CatalogConflictError("Movie conflicts with an existing record") from exc
     except Exception:
         await db.rollback()
         raise

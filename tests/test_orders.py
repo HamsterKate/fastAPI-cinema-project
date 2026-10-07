@@ -228,10 +228,7 @@ def test_cannot_cancel_order_twice(
     )
 
     assert second_response.status_code == 409
-    assert (
-        second_response.json()["detail"]
-        == "Only pending orders can be canceled"
-    )
+    assert second_response.json()["detail"] == "Only pending orders can be canceled"
 
 
 def test_user_cannot_get_another_users_order(
@@ -273,9 +270,7 @@ def test_user_cannot_get_another_users_order(
     assert login_response.status_code == 200
 
     other_user_headers = {
-        "Authorization": (
-            f"Bearer {login_response.json()['access_token']}"
-        ),
+        "Authorization": (f"Bearer {login_response.json()['access_token']}"),
     }
 
     response = client.get(

@@ -16,7 +16,6 @@ from app.favorites.services import (
 )
 from app.movies.schemas import MovieListResponseSchema
 
-
 router = APIRouter(prefix="/favorites", tags=["favorites"])
 
 
@@ -46,9 +45,7 @@ async def add_favorite_endpoint(
     try:
         await add_favorite(db, current_user.id, movie_id)
     except FavoriteMovieNotFoundError as exc:
-        raise HTTPException(
-            status_code=404, detail="Movie not found"
-        ) from exc
+        raise HTTPException(status_code=404, detail="Movie not found") from exc
     except FavoriteAlreadyExistsError as exc:
         raise HTTPException(
             status_code=409, detail="Movie is already in favorites"
@@ -66,6 +63,4 @@ async def remove_favorite_endpoint(
     try:
         await remove_favorite(db, current_user.id, movie_id)
     except FavoriteNotFoundError as exc:
-        raise HTTPException(
-            status_code=404, detail="Favorite not found"
-        ) from exc
+        raise HTTPException(status_code=404, detail="Favorite not found") from exc

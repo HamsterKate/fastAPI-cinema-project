@@ -101,9 +101,7 @@ async def create_checkout_session(
             },
         )
     except stripe.StripeError as error:
-        raise StripeCheckoutError(
-            "Could not create Stripe Checkout session"
-        ) from error
+        raise StripeCheckoutError("Could not create Stripe Checkout session") from error
 
     if checkout_session.url is None:
         raise StripeCheckoutError("Stripe did not return a checkout URL")
@@ -138,9 +136,7 @@ async def mark_payment_succeeded(
     checkout_session_id = str(checkout_session["id"])
 
     repository = PaymentRepository(db)
-    payment = await repository.get_by_checkout_session_id(
-        checkout_session_id
-    )
+    payment = await repository.get_by_checkout_session_id(checkout_session_id)
 
     if payment is None:
         return
@@ -159,5 +155,3 @@ async def mark_payment_succeeded(
         payment.order.status = OrderStatusEnum.PAID
 
     await db.commit()
-
-

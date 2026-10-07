@@ -25,6 +25,9 @@ jobs:
       - name: Check Python compilation
         run: docker compose exec -T web python -m compileall app main.py
 
+      - name: Check code formatting
+        run: docker compose exec -T web black --check app tests main.py
+
       - name: Apply database migrations
         run: docker compose exec -T web alembic upgrade head
 

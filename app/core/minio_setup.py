@@ -7,8 +7,7 @@ from app.core.storage import get_s3_client
 async def ensure_minio_bucket() -> None:
     async with get_s3_client() as s3_client:
         buckets = {
-            bucket["Name"]
-            for bucket in (await s3_client.list_buckets())["Buckets"]
+            bucket["Name"] for bucket in (await s3_client.list_buckets())["Buckets"]
         }
 
         if settings.minio_bucket not in buckets:

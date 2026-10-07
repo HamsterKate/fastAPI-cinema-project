@@ -50,12 +50,9 @@ async def checkout(
         raise CartIsEmptyError("Cart is empty")
 
     if any(
-        item.movie is None or item.movie.deleted_at is not None
-        for item in cart.items
+        item.movie is None or item.movie.deleted_at is not None for item in cart.items
     ):
-        raise MovieUnavailableError(
-            "One or more movies are no longer available"
-        )
+        raise MovieUnavailableError("One or more movies are no longer available")
 
     movie_ids = [item.movie_id for item in cart.items]
 
@@ -64,9 +61,7 @@ async def checkout(
         movie_ids,
     )
     if purchased_movie_ids:
-        raise MoviesAlreadyPurchasedError(
-            "One or more movies are already purchased"
-        )
+        raise MoviesAlreadyPurchasedError("One or more movies are already purchased")
 
     pending_movie_ids = await order_repository.get_pending_movie_ids(
         user_id,
@@ -125,18 +120,12 @@ async def get_orders_page(
     total_pages = (total_items + per_page - 1) // per_page
 
     def page_link(target_page: int) -> str:
-        return (
-            f"{path}?{urlencode({'page': target_page, 'per_page': per_page})}"
-        )
+        return f"{path}?{urlencode({'page': target_page, 'per_page': per_page})}"
 
     return OrderListResponseSchema(
         orders=orders,
         prev_page=page_link(page - 1) if page > 1 else None,
-        next_page=(
-            page_link(page + 1)
-            if page < total_pages
-            else None
-        ),
+        next_page=(page_link(page + 1) if page < total_pages else None),
         total_pages=total_pages,
         total_items=total_items,
     )
@@ -168,9 +157,7 @@ async def cancel_order(
         raise OrderNotFoundError("Order not found")
 
     if order.status is not OrderStatusEnum.PENDING:
-        raise OrderCannotBeCanceledError(
-            "Only pending orders can be canceled"
-        )
+        raise OrderCannotBeCanceledError("Only pending orders can be canceled")
 
     try:
         await repository.set_status(order, OrderStatusEnum.CANCELED)

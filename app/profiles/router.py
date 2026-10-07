@@ -16,7 +16,6 @@ from app.profiles.avatar_service import (
 )
 from app.profiles.services import get_profile, update_profile
 
-
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 

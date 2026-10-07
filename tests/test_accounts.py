@@ -290,11 +290,7 @@ def test_get_my_profile_returns_authenticated_user(
 ) -> None:
     response = client.get(
         "/api/v2/accounts/me",
-        headers={
-            "Authorization": (
-                f"Bearer {active_user['access_token']}"
-            )
-        },
+        headers={"Authorization": (f"Bearer {active_user['access_token']}")},
     )
 
     assert response.status_code == 200
@@ -353,9 +349,7 @@ def test_refresh_rotates_refresh_token(
     )
 
     assert reused_token_response.status_code == 401
-    assert reused_token_response.json()["detail"] == (
-        "Refresh token has been revoked."
-    )
+    assert reused_token_response.json()["detail"] == ("Refresh token has been revoked.")
 
 
 def test_logout_revokes_refresh_token(
@@ -377,9 +371,7 @@ def test_logout_revokes_refresh_token(
     )
 
     assert refresh_response.status_code == 401
-    assert refresh_response.json()["detail"] == (
-        "Refresh token has been revoked."
-    )
+    assert refresh_response.json()["detail"] == ("Refresh token has been revoked.")
 
 
 def test_reset_password_allows_login_with_new_password(
@@ -446,9 +438,7 @@ def test_reset_password_allows_login_with_new_password(
     )
 
     assert old_refresh_response.status_code == 401
-    assert old_refresh_response.json()["detail"] == (
-        "Refresh token has been revoked."
-    )
+    assert old_refresh_response.json()["detail"] == ("Refresh token has been revoked.")
 
 
 def test_reset_password_rejects_invalid_token(
@@ -463,9 +453,7 @@ def test_reset_password_rejects_invalid_token(
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == (
-        "Invalid or expired password reset token."
-    )
+    assert response.json()["detail"] == ("Invalid or expired password reset token.")
 
 
 def test_forgot_password_hides_unknown_email(

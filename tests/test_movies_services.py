@@ -193,11 +193,7 @@ async def test_update_movie_saves_changes_and_returns_updated_movie(
             current_movie_id: object,
         ) -> object:
             self.get_calls += 1
-            return (
-                movie
-                if self.get_calls == 1
-                else updated_movie
-            )
+            return movie if self.get_calls == 1 else updated_movie
 
         async def update_movie(
             self,

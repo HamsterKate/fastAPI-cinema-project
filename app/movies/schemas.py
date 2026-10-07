@@ -94,9 +94,7 @@ class MovieCreateResponseSchema(BaseModel):
                         }
                     ],
                 },
-                "messages": [
-                    "Genre 'DRAMA' was saved as 'Drama'."
-                ],
+                "messages": ["Genre 'DRAMA' was saved as 'Drama'."],
             }
         }
     )
@@ -204,14 +202,13 @@ class MovieUpdateRequestSchema(BaseModel):
     score: float | None = Field(default=None, ge=0, le=100)
     overview: str | None = Field(default=None, min_length=1)
     status: MovieStatusEnum | None = None
-    budget: Decimal | None = Field(
-        default=None, ge=0, max_digits=15, decimal_places=2
-    )
-    revenue: Decimal | None = Field(
-        default=None, ge=0, max_digits=15, decimal_places=2
-    )
+    budget: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
+    revenue: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     price: Decimal | None = Field(
-        default=None, ge=0,max_digits=6,decimal_places=2,
+        default=None,
+        ge=0,
+        max_digits=6,
+        decimal_places=2,
     )
 
     @field_validator("name", "overview", mode="before")

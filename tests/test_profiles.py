@@ -39,11 +39,7 @@ def test_get_profile_returns_not_found_before_first_update(
 ) -> None:
     response = client.get(
         "/api/v2/profiles/me",
-        headers={
-            "Authorization": (
-                f"Bearer {active_user['access_token']}"
-            )
-        },
+        headers={"Authorization": (f"Bearer {active_user['access_token']}")},
     )
 
     assert response.status_code == 404
@@ -54,11 +50,7 @@ def test_update_profile_creates_profile(
     client: TestClient,
     active_user: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
 
     update_response = client.patch(
         "/api/v2/profiles/me",
@@ -96,11 +88,7 @@ def test_update_profile_modifies_existing_profile(
     client: TestClient,
     active_user: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
 
     first_response = client.patch(
         "/api/v2/profiles/me",
@@ -137,11 +125,7 @@ def test_upload_and_delete_avatar(
     client: TestClient,
     active_user: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
 
     create_profile_response = client.patch(
         "/api/v2/profiles/me",
@@ -185,11 +169,7 @@ def test_upload_avatar_rejects_invalid_content_type(
     client: TestClient,
     active_user: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
 
     create_profile_response = client.patch(
         "/api/v2/profiles/me",
@@ -211,20 +191,14 @@ def test_upload_avatar_rejects_invalid_content_type(
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == (
-        "Avatar must be a JPEG or PNG image"
-    )
+    assert response.json()["detail"] == ("Avatar must be a JPEG or PNG image")
 
 
 def test_upload_avatar_rejects_file_larger_than_one_mb(
     client: TestClient,
     active_user: dict[str, str],
 ) -> None:
-    headers = {
-        "Authorization": (
-            f"Bearer {active_user['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {active_user['access_token']}")}
 
     create_profile_response = client.patch(
         "/api/v2/profiles/me",
@@ -246,8 +220,4 @@ def test_upload_avatar_rejects_file_larger_than_one_mb(
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == (
-        "Avatar size must not exceed 1 MB"
-    )
-
-
+    assert response.json()["detail"] == ("Avatar size must not exceed 1 MB")

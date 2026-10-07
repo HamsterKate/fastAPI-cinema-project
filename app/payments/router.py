@@ -18,7 +18,6 @@ from app.payments.service import (
     mark_payment_succeeded,
 )
 
-
 router = APIRouter(
     prefix="/payments",
     tags=["payments"],

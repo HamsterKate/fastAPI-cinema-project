@@ -2,7 +2,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import settings
 
-
 DATABASE_URL = (
     f"postgresql+asyncpg://{settings.postgres_user}:"
     f"{settings.postgres_password}@{settings.postgres_host}:"

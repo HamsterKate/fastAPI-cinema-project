@@ -75,8 +75,7 @@ async def test_forgot_password_ignores_inactive_user() -> None:
 @pytest.mark.asyncio
 async def test_activate_user_rejects_expired_token() -> None:
     expired_activation = SimpleNamespace(
-        expires_at=datetime.now(timezone.utc)
-        - timedelta(minutes=1),
+        expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
     )
     db = SimpleNamespace(
         execute=AsyncMock(
@@ -95,8 +94,7 @@ async def test_activate_user_rejects_expired_token() -> None:
 async def test_activate_user_rejects_token_without_user() -> None:
     activation = SimpleNamespace(
         user_id=uuid4(),
-        expires_at=datetime.now(timezone.utc)
-        + timedelta(minutes=1),
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=1),
     )
     db = SimpleNamespace(
         execute=AsyncMock(

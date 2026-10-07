@@ -23,7 +23,6 @@ from app.orders.services import (
     get_orders_page,
 )
 
-
 router = APIRouter(
     prefix="/orders",
     tags=["orders"],

@@ -101,9 +101,7 @@ class GenreModel(Base):
         back_populates="genres",
     )
 
-    __table_args__ = (
-        Index("uq_genres_name_lower", func.lower(name), unique=True),
-    )
+    __table_args__ = (Index("uq_genres_name_lower", func.lower(name), unique=True),)
 
 
 class ActorModel(Base):
@@ -123,9 +121,7 @@ class ActorModel(Base):
         back_populates="actors",
     )
 
-    __table_args__ = (
-        Index("ix_actors_name_lower", func.lower(name)),
-    )
+    __table_args__ = (Index("ix_actors_name_lower", func.lower(name)),)
 
 
 class CountryModel(Base):
@@ -148,9 +144,8 @@ class CountryModel(Base):
         back_populates="country",
     )
 
-    __table_args__ = (
-        Index("uq_countries_code_lower", func.lower(code), unique=True),
-    )
+    __table_args__ = (Index("uq_countries_code_lower", func.lower(code), unique=True),)
+
 
 class LanguageModel(Base):
     __tablename__ = "languages"
@@ -169,9 +164,7 @@ class LanguageModel(Base):
         back_populates="languages",
     )
 
-    __table_args__ = (
-        Index("uq_languages_name_lower", func.lower(name), unique=True),
-    )
+    __table_args__ = (Index("uq_languages_name_lower", func.lower(name), unique=True),)
 
 
 class MovieModel(Base):
@@ -245,4 +238,3 @@ class MovieModel(Base):
         CheckConstraint("revenue >= 0", name="revenue_non_negative"),
         CheckConstraint("price >= 0", name="price_non_negative"),
     )
-
